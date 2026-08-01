@@ -11,9 +11,23 @@ import { GameShell } from './play/ui/GameShell';
  *   /loading   → full loading screen demo
  *   /title     → full title screen demo
  *   /play      → THE GAME (RESET//07 full playable build)
+ *
+ * The game ships as a portable build (`base: './'`) and may be served from a
+ * subpath (e.g. Cloudflare Pages at /reset07/play). `detectBase` reads the
+ * current location once so the same build routes correctly both standalone
+ * (/play, local dev) and under a known deployment prefix (/reset07/play).
  */
+function detectBase(): string {
+  const match = window.location.pathname.match(/^\/(reset07)(?=\/|$)/);
+  return match ? `/${match[1]}` : '';
+}
+
 function usePathname(): { path: string; navigate: (to: string) => void } {
-  const normalize = useCallback(() => window.location.pathname.replace(/\/+$/, '') || '/', []);
+  const normalize = useCallback(() => {
+    const base = detectBase();
+    const raw = window.location.pathname.replace(/\/+$/, '') || '/';
+    return base && raw.startsWith(base) ? raw.slice(base.length) || '/' : raw;
+  }, []);
   const [path, setPath] = useState(normalize);
 
   useEffect(() => {
@@ -24,7 +38,9 @@ function usePathname(): { path: string; navigate: (to: string) => void } {
 
   const navigate = useCallback(
     (to: string) => {
-      window.history.pushState({}, '', to);
+      const base = detectBase();
+      const url = `${base}${to === '/' ? '/' : to}`;
+      window.history.pushState({}, '', url);
       setPath(normalize());
     },
     [normalize],
