@@ -1,0 +1,69 @@
+/* ============================================================
+   RESET//07 — Brand patterns CSS
+   Supporting animation for the four procedural patterns.
+   The SVG geometry lives in the pattern components; this file
+   only controls motion. Patterns are subtle, responsive, and
+   disabled under reduced-motion / low-effects settings.
+   ============================================================ */
+
+/* CountdownGrid — mostly static; only a rare node blink is allowed.
+   (No animation by default — see component for the optional blink.) */
+
+/* ResetRings — slow, single-direction rotation of partial arcs. */
+.brand-pattern--reset-rings .brand-pattern__rotor {
+  animation: brand-rotate 90s var(--ease-linear) infinite;
+}
+
+/* MemoryTrace — the persistent node emits a very slow, gentle pulse
+   (max once per 4 s — well within safe flash limits). */
+.brand-pattern--memory-trace .brand-pattern__node {
+  animation: brand-trace-pulse 4s var(--ease-out-quart) infinite;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+@keyframes brand-trace-pulse {
+  0%,
+  100% {
+    opacity: 0.85;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
+/* CriticalState — expanding hazard ring (single ring, ~0.22 Hz) and
+   drifting segmented border. */
+.brand-pattern--critical-state .brand-pattern__hazard {
+  animation: brand-hazard 4.5s var(--ease-out-quart) infinite;
+}
+
+.brand-pattern--critical-state .brand-pattern__border {
+  animation: brand-border-drift 12s var(--ease-linear) infinite;
+}
+
+/* Reduced motion: all pattern motion stops (OS-level). */
+@media (prefers-reduced-motion: reduce) {
+  .brand-pattern__rotor,
+  .brand-pattern__hazard,
+  .brand-pattern__border,
+  .brand-pattern__node {
+    animation: none !important;
+  }
+}
+
+/* In-app reduced-motion simulation. */
+html[data-motion='reduced'] .brand-pattern__rotor,
+html[data-motion='reduced'] .brand-pattern__hazard,
+html[data-motion='reduced'] .brand-pattern__border,
+html[data-motion='reduced'] .brand-pattern__node {
+  animation: none !important;
+}
+
+/* Low-effects mode: static patterns. */
+html[data-effects='low'] .brand-pattern__rotor,
+html[data-effects='low'] .brand-pattern__hazard,
+html[data-effects='low'] .brand-pattern__border,
+html[data-effects='low'] .brand-pattern__node {
+  animation: none !important;
+}

@@ -1,0 +1,129 @@
+/* ============================================================
+   RESET//07 — Brand design tokens
+   ------------------------------------------------------------
+   Single source of truth for the identity.
+   Never duplicate raw hex values elsewhere in the codebase;
+   consume these custom properties (or src/brand/tokens/*.ts).
+   ============================================================ */
+
+:root {
+  /* ---------- Core palette (spec-defined — do not edit) ---------- */
+  --color-core-black: #070a0f;
+  --color-deep-navy: #101826;
+  --color-emergency-cyan: #38e8ff;
+  --color-reactor-orange: #ff6a1a;
+  --color-corruption-magenta: #ff3d9a;
+  --color-signal-white: #f4f8ff;
+
+  /* ---------- Semantic tokens (derived from the core palette) ---------- */
+  --color-background-primary: var(--color-core-black);
+  --color-background-secondary: var(--color-deep-navy);
+  --color-surface: #152036;
+  --color-surface-hover: #1c2b45;
+  --color-text-primary: var(--color-signal-white);
+  --color-text-secondary: #a9b8cc;
+  --color-text-muted: #6e829c; /* ≥ 5:1 on Core Black — captions/decorative only */
+  --color-border-subtle: rgba(56, 232, 255, 0.16);
+  --color-border-active: var(--color-emergency-cyan);
+  --color-action-primary: var(--color-emergency-cyan);
+  --color-action-danger: var(--color-reactor-orange);
+  --color-signal-memory: var(--color-emergency-cyan);
+  --color-signal-corruption: var(--color-corruption-magenta);
+  --color-signal-warning: var(--color-reactor-orange);
+  --color-signal-success: #6fefff; /* cyan-tinted "system nominal" — same hue family */
+  --color-overlay-dark: rgba(3, 6, 10, 0.78);
+  --color-focus-ring: var(--color-emergency-cyan);
+
+  /* Alpha helpers (subtle fills & glows) */
+  --color-cyan-soft: rgba(56, 232, 255, 0.14);
+  --color-cyan-faint: rgba(56, 232, 255, 0.07);
+  --color-orange-soft: rgba(255, 106, 26, 0.16);
+  --color-magenta-soft: rgba(255, 61, 154, 0.14);
+
+  /* ---------- Gradients ----------
+     Allowed ONLY for: background depth, energy pulses,
+     explosion illumination, corruption transitions.
+     The logo itself must never require a gradient. */
+  --gradient-depth: linear-gradient(180deg, #0d1524 0%, #070a0f 100%);
+  --gradient-emergency: linear-gradient(120deg, rgba(255, 106, 26, 0.2) 0%, transparent 55%);
+  --gradient-corruption: linear-gradient(120deg, rgba(255, 61, 154, 0.22) 0%, transparent 55%);
+  --gradient-pulse-cyan: linear-gradient(90deg, transparent 0%, rgba(56, 232, 255, 0.55) 50%, transparent 100%);
+
+  /* ---------- Spacing scale (4 px base) ---------- */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 64px;
+  --space-9: 96px;
+  --space-10: 128px;
+
+  /* ---------- Radius ---------- */
+  --radius-none: 0;
+  --radius-xs: 2px;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 10px;
+  --radius-pill: 999px;
+
+  /* ---------- Shadows (restrained; glow is an accent, not a default) ---------- */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.45);
+  --shadow-md: 0 4px 14px rgba(0, 0, 0, 0.45);
+  --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.55);
+  --glow-cyan: 0 0 18px rgba(56, 232, 255, 0.28);
+  --glow-orange: 0 0 18px rgba(255, 106, 26, 0.3);
+
+  /* ---------- Typography ---------- */
+  --font-display: 'Chakra Petch', 'Be Vietnam Pro', system-ui, sans-serif;
+  --font-ui: 'Be Vietnam Pro', 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-data: 'IBM Plex Mono', 'JetBrains Mono', ui-monospace, 'SFMono-Regular', monospace;
+
+  /* ---------- Motion: durations ---------- */
+  --dur-micro: 100ms; /* 80–140 ms micro interactions */
+  --dur-button: 150ms; /* 120–180 ms button states */
+  --dur-panel: 220ms; /* 180–280 ms panel transitions */
+  --dur-reset: 700ms; /* 500–900 ms major reset transitions */
+  --dur-logo: 2400ms; /* 2–3 s logo intro */
+  --dur-tick: 90ms; /* countdown tick */
+  --dur-loading-sweep: 2400ms;
+  --dur-pattern: 60000ms; /* slow ambient pattern rotation */
+
+  /* ---------- Motion: easing ---------- */
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
+  --ease-in-out-quart: cubic-bezier(0.76, 0, 0.24, 1);
+  --ease-snap: cubic-bezier(0.85, 0, 0.15, 1);
+  --ease-linear: linear;
+
+  /* ---------- Z-index layers ---------- */
+  --z-pattern: 1;
+  --z-surface: 10;
+  --z-overlay: 100;
+  --z-hud: 200;
+  --z-modal: 300;
+  --z-toast: 400;
+  --z-loading: 500;
+
+  /* ---------- Focus ---------- */
+  --focus-ring-width: 2px;
+  --focus-ring-offset: 3px;
+
+  /* ---------- Flash intensity ----------
+     Warning flashes multiply their opacity by this value.
+     `data-flash="reduced"` on <html> sets it to 0 (no flashes). */
+  --flash-opacity: 1;
+
+  /* ---------- Safe areas (notched / rounded displays) ---------- */
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+}
+
+/* Flash-intensity control: `data-flash="reduced"` kills warning flashes. */
+html[data-flash='reduced'] {
+  --flash-opacity: 0;
+}

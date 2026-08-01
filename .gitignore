@@ -1,0 +1,8 @@
+node_modules/
+dist/
+*.local
+.DS_Store
+Thumbs.db
+
+# Generated raster icons (run `npm run generate:icons` after supplying real brand assets)
+public/icons/

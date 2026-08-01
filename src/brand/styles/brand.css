@@ -1,0 +1,695 @@
+/* ============================================================
+   RESET//07 — Brand core CSS
+   ------------------------------------------------------------
+   Base styles, logo component behavior, logo animation system,
+   UI primitives, and motion-safety rules.
+   ============================================================ */
+
+/* ---------- Base ---------- */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  background: var(--color-background-primary);
+}
+
+body {
+  margin: 0;
+  min-height: 100dvh;
+  background: var(--color-background-primary);
+  color: var(--color-text-primary);
+  font-family: var(--font-ui);
+  font-size: 1rem;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overflow-x: hidden;
+}
+
+img {
+  max-width: 100%;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+::selection {
+  background: var(--color-emergency-cyan);
+  color: var(--color-core-black);
+}
+
+/* Focus — always visible, always keyboard-friendly */
+:focus-visible {
+  outline: var(--focus-ring-width) solid var(--color-focus-ring);
+  outline-offset: var(--focus-ring-offset);
+  border-radius: var(--radius-xs);
+}
+
+/* Subtle branded scrollbar (WebKit) */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-core-black);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-deep-navy);
+  border: 2px solid var(--color-core-black);
+  border-radius: var(--radius-pill);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-surface-hover);
+}
+
+/* ---------- Logo assets ----------
+   Sizing is passed inline by the components (style width/height);
+   height: auto preserves the intrinsic aspect ratio whenever only
+   one dimension is given. Never set width/height: auto here — it
+   would override the component sizes and collapse SVG assets to
+   their 300 px default intrinsic size. */
+
+.brand-logo {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+/* ---------- Lockups ---------- */
+
+.brand-lockup {
+  display: inline-flex;
+  align-items: center;
+}
+
+.brand-lockup--horizontal {
+  flex-direction: row;
+}
+
+.brand-lockup--stacked {
+  flex-direction: column;
+}
+
+.brand-lockup--responsive {
+  flex-direction: column;
+}
+
+@media (min-width: 480px) {
+  .brand-lockup--responsive {
+    flex-direction: row;
+  }
+}
+
+.brand-lockup--sm {
+  gap: var(--space-2);
+}
+.brand-lockup--md {
+  gap: var(--space-3);
+}
+.brand-lockup--lg {
+  gap: var(--space-4);
+}
+
+/* ---------- Logo intro animation ----------
+   Sequence: countdown ring → segments to zero → // interruption →
+   wordmark reveal → cyan pulse → orange accent → static logo.
+   The supplied SVG assets are never redrawn or deformed; we animate
+   supporting elements and mask/clip the logo container only. */
+
+.brand-logo-anim {
+  position: relative;
+  display: block;
+  width: min(80vw, 640px);
+  max-width: 100%;
+  line-height: 0;
+}
+
+.brand-logo-anim__ring {
+  position: absolute;
+  left: -18%;
+  top: -18%;
+  width: 136%;
+  height: 136%;
+  overflow: visible;
+}
+
+.brand-logo-anim__slashg {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.brand-logo-anim__mark {
+  position: relative;
+  display: block;
+  width: 100%;
+  overflow: hidden;
+}
+
+.brand-logo-anim__img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.brand-logo-anim__pulse {
+  position: absolute;
+  inset: 0;
+  background: var(--gradient-pulse-cyan);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.brand-logo-anim__warn {
+  position: absolute;
+  top: 6%;
+  right: 4%;
+  width: 34px;
+  height: 4px;
+  background: var(--color-reactor-orange);
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Keyframes */
+
+@keyframes brand-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes brand-fade-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes brand-seg-out {
+  from {
+    stroke-dashoffset: 0;
+  }
+  to {
+    stroke-dashoffset: 94;
+  }
+}
+
+@keyframes brand-slash-in {
+  from {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes brand-mark-reveal {
+  from {
+    clip-path: inset(0 100% 0 0);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+@keyframes brand-pulse-sweep {
+  0% {
+    transform: translateX(-130%);
+    opacity: 0;
+  }
+  25% {
+    opacity: 1;
+  }
+  75% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(130%);
+    opacity: 0;
+  }
+}
+
+@keyframes brand-warn-flash {
+  0% {
+    opacity: 0;
+  }
+  25% {
+    opacity: var(--flash-opacity, 1);
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes brand-sweep {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes brand-colon-blink {
+  0%,
+  49% {
+    opacity: 1;
+  }
+  50%,
+  100% {
+    opacity: 0.25;
+  }
+}
+
+@keyframes brand-tick-pop {
+  0% {
+    transform: scaleY(1);
+  }
+  40% {
+    transform: scaleY(1.12);
+  }
+  100% {
+    transform: scaleY(1);
+  }
+}
+
+@keyframes brand-rotate {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes brand-hazard {
+  0% {
+    transform: scale(0.7);
+    opacity: 0.1;
+  }
+  60% {
+    opacity: 0.45;
+  }
+  100% {
+    transform: scale(1.5);
+    opacity: 0;
+  }
+}
+
+@keyframes brand-border-drift {
+  to {
+    stroke-dashoffset: -48;
+  }
+}
+
+@keyframes brand-line-grow {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+/* ---------- Loading brand mark ---------- */
+
+.brand-loading-mark {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.brand-loading-mark__stage {
+  position: relative;
+}
+
+.brand-loading-mark__ring {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.brand-loading-mark__sweep {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: brand-sweep var(--dur-loading-sweep) var(--ease-linear) infinite;
+}
+
+.brand-loading-mark__icon {
+  position: absolute;
+  inset: 26%;
+}
+
+/* ---------- Panels & surfaces ---------- */
+
+.brand-panel {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-md);
+  padding: var(--space-5);
+}
+
+.brand-panel--raised {
+  background: var(--color-background-secondary);
+}
+
+.brand-panel--flush {
+  padding: 0;
+  overflow: hidden;
+}
+
+.brand-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  transition: background-color var(--dur-button) var(--ease-out-quart),
+    border-color var(--dur-button) var(--ease-out-quart);
+}
+
+.brand-card:hover {
+  background: var(--color-surface-hover);
+  border-color: var(--color-border-active);
+}
+
+/* ---------- Buttons ---------- */
+
+.brand-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  font-family: var(--font-ui);
+  font-weight: 600;
+  font-size: 0.8125rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-text-primary);
+  background: transparent;
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 10px 20px;
+  cursor: pointer;
+  user-select: none;
+  transition: background-color var(--dur-button) var(--ease-out-quart),
+    border-color var(--dur-button) var(--ease-out-quart),
+    color var(--dur-button) var(--ease-out-quart),
+    transform var(--dur-micro) var(--ease-snap),
+    box-shadow var(--dur-button) var(--ease-out-quart);
+}
+
+.brand-button:hover {
+  background: var(--color-cyan-soft);
+  border-color: var(--color-border-active);
+}
+
+.brand-button:active {
+  transform: translateY(1px);
+}
+
+.brand-button--primary {
+  background: var(--color-action-primary);
+  border-color: var(--color-action-primary);
+  color: var(--color-core-black);
+  font-weight: 700;
+}
+
+.brand-button--primary:hover {
+  background: var(--color-signal-success);
+  border-color: var(--color-signal-success);
+  box-shadow: var(--glow-cyan);
+}
+
+.brand-button--danger {
+  border-color: var(--color-reactor-orange);
+  color: var(--color-reactor-orange);
+}
+
+.brand-button--danger:hover {
+  background: var(--color-orange-soft);
+  border-color: var(--color-reactor-orange);
+  box-shadow: var(--glow-orange);
+}
+
+.brand-button--sm {
+  padding: 6px 12px;
+  font-size: 0.75rem;
+}
+
+.brand-button--lg {
+  padding: 14px 28px;
+  font-size: 0.9375rem;
+}
+
+/* ---------- Chips ---------- */
+
+.brand-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-family: var(--font-data);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-pill);
+  padding: 4px 12px;
+  white-space: nowrap;
+}
+
+.brand-chip--memory {
+  color: var(--color-emergency-cyan);
+  border-color: rgba(56, 232, 255, 0.35);
+  background: var(--color-cyan-faint);
+}
+
+.brand-chip--warning {
+  color: var(--color-reactor-orange);
+  border-color: rgba(255, 106, 26, 0.4);
+  background: var(--color-orange-soft);
+}
+
+.brand-chip--corruption {
+  color: var(--color-corruption-magenta);
+  border-color: rgba(255, 61, 154, 0.4);
+  background: var(--color-magenta-soft);
+}
+
+.brand-chip--success {
+  color: var(--color-signal-success);
+  border-color: rgba(111, 239, 255, 0.35);
+  background: var(--color-cyan-faint);
+}
+
+.brand-chip__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: var(--radius-pill);
+  background: currentColor;
+  flex: none;
+}
+
+/* ---------- Emergency frame (warning containers) ---------- */
+
+.brand-emergency-frame {
+  position: relative;
+  border: 1px dashed rgba(255, 106, 26, 0.45);
+  border-radius: var(--radius-sm);
+}
+
+.brand-emergency-frame::before,
+.brand-emergency-frame::after {
+  content: '';
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--color-reactor-orange);
+  pointer-events: none;
+}
+
+.brand-emergency-frame::before {
+  top: -2px;
+  left: -2px;
+  border-right: none;
+  border-bottom: none;
+}
+
+.brand-emergency-frame::after {
+  bottom: -2px;
+  right: -2px;
+  border-left: none;
+  border-top: none;
+}
+
+/* ---------- Slash divider ---------- */
+
+.slash-divider {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  color: var(--color-emergency-cyan);
+}
+
+.slash-divider__glyph {
+  font-family: var(--font-data);
+  font-weight: 600;
+  font-size: 0.875rem;
+  letter-spacing: 0.02em;
+}
+
+.slash-divider__line {
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--color-border-subtle) 30%, var(--color-border-subtle) 70%, transparent);
+}
+
+.slash-divider--warning {
+  color: var(--color-reactor-orange);
+}
+
+.slash-divider--corruption {
+  color: var(--color-corruption-magenta);
+}
+
+/* ---------- Timing line ---------- */
+
+.timing-line {
+  display: block;
+  height: 2px;
+  width: 100%;
+  background: linear-gradient(90deg, transparent, var(--color-emergency-cyan), transparent);
+  opacity: 0.7;
+}
+
+.timing-line--warning {
+  background: linear-gradient(90deg, transparent, var(--color-reactor-orange), transparent);
+}
+
+.timing-line.is-animating {
+  transform-origin: left center;
+  animation: brand-line-grow 600ms var(--ease-out-expo) both;
+}
+
+/* ---------- Brand patterns (shared behavior) ---------- */
+
+.brand-pattern {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  overflow: visible;
+}
+
+.brand-pattern__rotor {
+  transform-box: view-box;
+  transform-origin: center;
+  animation: brand-rotate var(--dur-pattern) var(--ease-linear) infinite;
+}
+
+.brand-pattern__hazard {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: brand-hazard 4.5s var(--ease-out-quart) infinite;
+}
+
+.brand-pattern__border {
+  animation: brand-border-drift 12s var(--ease-linear) infinite;
+}
+
+/* ============================================================
+   Motion safety
+   ============================================================ */
+
+/* 1. OS-level reduced motion (pure CSS, no JS required). */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0s !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  /* Logo intro fallback: simple 200 ms fade, no ring/flash/movement. */
+  .brand-logo-anim {
+    animation: brand-fade-in 200ms ease-out both !important;
+  }
+  .brand-logo-anim__ring,
+  .brand-logo-anim__slashg,
+  .brand-logo-anim__pulse,
+  .brand-logo-anim__warn {
+    opacity: 0 !important;
+    animation: none !important;
+  }
+  .brand-logo-anim__mark {
+    clip-path: none !important;
+    animation: brand-fade-in 200ms ease-out both !important;
+  }
+}
+
+/* 2. In-app simulation toggle (guidelines page): html[data-motion='reduced'] */
+html[data-motion='reduced'] .brand-logo-anim__ring,
+html[data-motion='reduced'] .brand-logo-anim__slashg,
+html[data-motion='reduced'] .brand-logo-anim__pulse,
+html[data-motion='reduced'] .brand-logo-anim__warn,
+html[data-motion='reduced'] .brand-pattern__rotor,
+html[data-motion='reduced'] .brand-pattern__hazard,
+html[data-motion='reduced'] .brand-pattern__border,
+html[data-motion='reduced'] .brand-loading-mark__sweep,
+html[data-motion='reduced'] .brand-logo-anim {
+  animation: none !important;
+}
+
+html[data-motion='reduced'] .brand-logo-anim {
+  animation: brand-fade-in 200ms ease-out both !important;
+}
+
+html[data-motion='reduced'] .brand-logo-anim__ring,
+html[data-motion='reduced'] .brand-logo-anim__slashg,
+html[data-motion='reduced'] .brand-logo-anim__pulse,
+html[data-motion='reduced'] .brand-logo-anim__warn {
+  opacity: 0 !important;
+}
+
+html[data-motion='reduced'] .brand-logo-anim__mark {
+  clip-path: none !important;
+}
+
+/* 3. Low-effects mode: patterns go static, glows are removed. */
+html[data-effects='low'] .brand-pattern__rotor,
+html[data-effects='low'] .brand-pattern__hazard,
+html[data-effects='low'] .brand-pattern__border,
+html[data-effects='low'] .brand-loading-mark__sweep,
+html[data-effects='low'] .timing-line.is-animating {
+  animation: none !important;
+}
+
+html[data-effects='low'] .brand-button--primary:hover,
+html[data-effects='low'] .brand-button--danger:hover {
+  box-shadow: none !important;
+}

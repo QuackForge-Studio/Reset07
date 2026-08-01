@@ -1,0 +1,314 @@
+/* ============================================================
+   RESET//07 — Game screens (loading + title)
+   ============================================================ */
+
+/* ---------- Loading screen ---------- */
+
+.loading-screen {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+  min-height: 100vh; /* fallback for older browsers */
+  padding:
+    calc(var(--safe-top, 0px) + var(--space-6))
+    calc(var(--safe-right, 0px) + var(--space-6))
+    calc(var(--safe-bottom, 0px) + var(--space-6))
+    calc(var(--safe-left, 0px) + var(--space-6));
+  background:
+    radial-gradient(120% 90% at 50% 38%, rgba(56, 232, 255, 0.06), transparent 60%),
+    var(--gradient-depth);
+  overflow: hidden;
+}
+
+.loading-screen__trace {
+  bottom: -30%;
+  height: 55%;
+  opacity: 0.3;
+}
+
+.loading-screen__bar {
+  position: relative;
+  z-index: var(--z-surface);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.loading-screen__center {
+  position: relative;
+  z-index: var(--z-surface);
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-5);
+  padding-block: var(--space-6);
+}
+
+.loading-screen__status {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+  min-height: 1.5em;
+}
+
+.loading-screen__pct {
+  color: var(--color-emergency-cyan);
+  font-variant-numeric: tabular-nums;
+}
+
+.loading-screen__foot {
+  position: relative;
+  z-index: var(--z-surface);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+}
+
+/* Bottom-edge progress line */
+.loading-screen__edge {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--color-emergency-cyan), var(--color-signal-success));
+  transform-origin: left center;
+  box-shadow: var(--glow-cyan);
+  pointer-events: none;
+}
+
+/* ---------- Title screen ---------- */
+
+.title-screen {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+  min-height: 100vh;
+  padding:
+    calc(var(--safe-top, 0px) + var(--space-5))
+    calc(var(--safe-right, 0px) + var(--space-6))
+    calc(var(--safe-bottom, 0px) + var(--space-5))
+    calc(var(--safe-left, 0px) + var(--space-6));
+  background: var(--gradient-depth);
+  overflow: hidden;
+}
+
+.title-screen__rings {
+  z-index: var(--z-pattern);
+}
+
+.title-screen__vignette {
+  position: absolute;
+  inset: 0;
+  z-index: var(--z-pattern);
+  background:
+    radial-gradient(140% 110% at 50% 42%, transparent 40%, rgba(3, 6, 10, 0.55) 100%),
+    radial-gradient(60% 40% at 50% 100%, rgba(255, 106, 26, 0.05), transparent 70%);
+  pointer-events: none;
+}
+
+.title-screen__bar {
+  position: relative;
+  z-index: var(--z-surface);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.title-screen__center {
+  position: relative;
+  z-index: var(--z-surface);
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-5);
+  text-align: center;
+  padding-block: var(--space-6);
+}
+
+.title-screen__tagline {
+  margin: 0;
+}
+
+.title-screen__divider {
+  width: min(420px, 80vw);
+}
+
+.title-menu {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  width: min(420px, 80vw);
+  margin-top: var(--space-3);
+}
+
+.title-menu__item {
+  display: grid;
+  grid-template-columns: 40px 1fr auto 24px;
+  align-items: center;
+  gap: var(--space-3);
+  padding: 12px 14px;
+  border: 1px solid transparent;
+  border-left: 2px solid transparent;
+  border-radius: var(--radius-sm);
+  text-align: left;
+  color: var(--color-text-secondary);
+  transition:
+    background-color var(--dur-button) var(--ease-out-quart),
+    border-color var(--dur-button) var(--ease-out-quart),
+    color var(--dur-button) var(--ease-out-quart),
+    transform var(--dur-micro) var(--ease-snap);
+}
+
+.title-menu__item:hover {
+  background: var(--color-cyan-faint);
+}
+
+.title-menu__item:active {
+  transform: translateY(1px);
+}
+
+.title-menu__item.is-selected {
+  background: var(--color-cyan-soft);
+  border-left-color: var(--color-emergency-cyan);
+  border-color: var(--color-border-subtle);
+  border-left-width: 2px;
+  color: var(--color-text-primary);
+}
+
+.title-menu__item--primary .title-menu__label {
+  color: var(--color-emergency-cyan);
+  font-weight: 700;
+}
+
+.title-menu__index {
+  color: var(--color-text-muted);
+}
+
+.title-menu__item.is-selected .title-menu__index {
+  color: var(--color-emergency-cyan);
+}
+
+.title-menu__label {
+  font-family: var(--font-ui);
+  font-weight: 600;
+  font-size: 0.875rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.title-menu__hint {
+  color: var(--color-text-muted);
+}
+
+.title-menu__arrow {
+  color: var(--color-emergency-cyan);
+  opacity: 0;
+  transform: translateX(-4px);
+  transition: opacity var(--dur-button) var(--ease-out-quart), transform var(--dur-button) var(--ease-out-quart);
+}
+
+.title-menu__item.is-selected .title-menu__arrow,
+.title-menu__item:hover .title-menu__arrow {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.title-screen__foot {
+  position: relative;
+  z-index: var(--z-surface);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+}
+
+/* ---------- Responsive ---------- */
+
+/* Portrait / narrow: stack the bar, center everything, shrink the mark. */
+@media (max-width: 560px) {
+  .loading-screen__bar,
+  .title-screen__bar {
+    justify-content: center;
+  }
+
+  .loading-screen__bar .type-data-s,
+  .title-screen__bar .type-data-s {
+    display: none;
+  }
+
+  .title-screen__tagline {
+    font-size: 0.6875rem;
+    letter-spacing: 0.12em;
+    max-width: 90vw;
+  }
+
+  .title-menu__hint {
+    display: none;
+  }
+
+  .title-screen__foot {
+    justify-content: center;
+    text-align: center;
+  }
+
+  .title-screen__foot span:last-child {
+    display: none;
+  }
+}
+
+/* Portrait phones: larger gaps, comfortable touch targets. */
+@media (max-width: 420px) {
+  .title-screen,
+  .loading-screen {
+    padding-inline: var(--space-4);
+  }
+
+  .title-menu__item {
+    padding-block: 14px;
+  }
+
+  .loading-screen__status {
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-1);
+  }
+}
+
+/* Landscape phones: keep the center column compact. */
+@media (max-height: 480px) and (orientation: landscape) {
+  .title-screen__center {
+    justify-content: flex-start;
+    gap: var(--space-3);
+  }
+
+  .title-screen {
+    padding-block: var(--space-3);
+  }
+
+  .title-menu {
+    gap: var(--space-1);
+  }
+
+  .loading-screen__center {
+    justify-content: center;
+  }
+}
+
+/* Ultrawide: the center column stays readable, no full-bleed chaos. */
+@media (min-width: 1920px) {
+  .title-menu {
+    width: min(480px, 60vw);
+  }
+}

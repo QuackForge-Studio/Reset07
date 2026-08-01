@@ -1,0 +1,92 @@
+/* RESET//07 — global stylesheet entry.
+   Import order matters: tokens → typography → brand → patterns. */
+
+@import '../brand/styles/brand-tokens.css';
+@import '../brand/styles/typography.css';
+@import '../brand/styles/brand.css';
+@import '../brand/styles/patterns.css';
+@import '../game/hud/hud.css';
+@import '../game/screens/screens.css';
+@import '../brand/layouts/social.css';
+@import '../guidelines/guidelines.css';
+
+/* ---------- Guidelines-page extras ---------- */
+
+.g-dna-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.g-pattern-frame {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border-subtle);
+  background: var(--color-core-black);
+}
+
+/* Clear-space demo */
+.g-clearspace__box {
+  position: relative;
+  display: inline-block;
+  padding: 32px 44px;
+  outline: 1px dashed rgba(56, 232, 255, 0.5);
+  outline-offset: 0;
+  background: rgba(56, 232, 255, 0.03);
+}
+
+.g-clearspace__guide {
+  position: absolute;
+  font-family: var(--font-data);
+  font-size: 0.625rem;
+  color: var(--color-emergency-cyan);
+}
+
+.g-clearspace__guide--a {
+  top: -18px;
+  left: 0;
+}
+
+.g-clearspace__guide--b {
+  right: -18px;
+  bottom: -6px;
+}
+
+/* Gradient specimens */
+.g-grad {
+  width: 100%;
+  height: 120px;
+  border-radius: var(--radius-sm);
+}
+
+.g-grad--depth {
+  background: var(--gradient-depth);
+}
+
+.g-grad--emergency {
+  background: var(--gradient-emergency), var(--color-core-black);
+}
+
+.g-grad--corruption {
+  background: var(--gradient-corruption), var(--color-core-black);
+}
+
+/* Maskable icon demo — core black extended background */
+.g-icon-maskable {
+  outline: 1px dashed rgba(56, 232, 255, 0.4);
+  outline-offset: 6px;
+}
+
+/* Incorrect-usage spinner demo (purposefully violates the rules) */
+.g-spin-demo {
+  animation: brand-sweep 1.6s var(--ease-linear) infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .g-spin-demo {
+    animation: none;
+  }
+}

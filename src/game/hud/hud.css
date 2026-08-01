@@ -1,0 +1,96 @@
+/* ============================================================
+   RESET//07 — HUD primitives
+   ============================================================ */
+
+/* Countdown timer */
+.countdown-timer {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--color-emergency-cyan);
+}
+
+.countdown-timer--xl .countdown-timer__value {
+  font-family: var(--font-data);
+  font-weight: 600;
+  font-size: clamp(2rem, 6vw, 4.5rem);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  animation: brand-tick-pop var(--dur-tick) var(--ease-snap);
+}
+
+.countdown-timer--m .countdown-timer__value {
+  font-family: var(--font-data);
+  font-weight: 600;
+  font-size: 1.5rem;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  animation: brand-tick-pop var(--dur-tick) var(--ease-snap);
+}
+
+.countdown-timer__flag {
+  color: var(--color-reactor-orange);
+  border: 1px solid var(--color-reactor-orange);
+  border-radius: var(--radius-pill);
+  padding: 1px 7px;
+}
+
+.countdown-timer.is-critical .countdown-timer__value {
+  color: var(--color-reactor-orange);
+}
+
+/* Segmented ring */
+.segmented-ring {
+  display: block;
+  flex: none;
+}
+
+/* Status chip */
+.status-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-family: var(--font-data);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-pill);
+  padding: 4px 12px;
+  white-space: nowrap;
+  color: var(--color-text-secondary);
+}
+
+.status-chip__glyph {
+  font-weight: 600;
+}
+
+.status-chip__value {
+  color: var(--color-text-secondary);
+  opacity: 0.8;
+}
+
+.status-chip--memory {
+  color: var(--color-signal-memory);
+  border-color: rgba(56, 232, 255, 0.35);
+  background: var(--color-cyan-faint);
+}
+
+.status-chip--warning {
+  color: var(--color-signal-warning);
+  border-color: rgba(255, 106, 26, 0.4);
+  background: var(--color-orange-soft);
+}
+
+.status-chip--corruption {
+  color: var(--color-signal-corruption);
+  border-color: rgba(255, 61, 154, 0.4);
+  background: var(--color-magenta-soft);
+}
+
+.status-chip--success {
+  color: var(--color-signal-success);
+  border-color: rgba(111, 239, 255, 0.35);
+  background: var(--color-cyan-faint);
+}
