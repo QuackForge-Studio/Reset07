@@ -4,6 +4,8 @@ Durable task log. Updated whenever a chunk of work lands. One line per item, new
 
 ## In progress
 
+- [x] Deployed to Cloudflare Pages: game live at `https://app.quackforge.io.vn/reset07/play` (subpath-aware router, Pages Function SPA fallback, cache-busted SW); QuackForge site CTA updated to "Chơi ngay" (spec: `docs/superpowers/specs/2026-08-01-deploy-reset07-cloudflare-pages.md`).
+
 - [x] Independent release audit: repaired closed-gate collision, true pause lifecycle, mobile input, boss/ending integration, and delivered durable production-like smoke coverage plus audit report.
 - [x] Write README (game docs, build/run commands, controls, architecture).
 - [x] Wire durable production-like smoke tests into package.json for `/play`.
