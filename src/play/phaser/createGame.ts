@@ -45,5 +45,6 @@ export function createGame(parent: HTMLElement): Phaser.Game {
     },
   });
   registerScenes(game);
+  game.scene.start('boot');
   return game;
 }

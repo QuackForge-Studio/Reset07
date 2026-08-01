@@ -86,6 +86,7 @@ export class CoreGuardian extends DamageableSprite {
   damage(amount: number): void {
     if (!this.alive) return;
     super.damage(amount);
+    if (!this.alive) return;
     this.sceneW.fx.floatText(this.x + (Math.random() - 0.5) * 30, this.y - 60, String(amount), PAL.magenta, 1.3);
     this.sceneW.sfx('enemyHit');
     const pct = this.hpPct;
@@ -280,14 +281,14 @@ export class CoreGuardian extends DamageableSprite {
     for (let i = 0; i < n; i++) {
       const a = base + (i / n) * Math.PI * 2;
       const b = this.sceneW.physics.add.sprite(this.x + Math.cos(a) * 60, this.y + Math.sin(a) * 60, 'bullet-heavy');
+      this.sceneW.enemyBolts.add(b); // add BEFORE setting velocity (group add resets the body)
       b.setRotation(a);
       b.setDepth(70);
       const body = b.body as Phaser.Physics.Arcade.Body;
-      body.setVelocity(Math.cos(a) * 210, Math.sin(a) * 210);
       body.setCircle(7, 7, 7);
+      body.setVelocity(Math.cos(a) * 210, Math.sin(a) * 210);
       b.setData('dmg', 14);
       b.setData('life', 3.5);
-      this.sceneW.enemyBolts.add(b);
     }
     this.sceneW.sfx('bossAttack');
   }

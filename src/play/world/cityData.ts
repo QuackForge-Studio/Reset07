@@ -34,15 +34,7 @@ export const T = {
 
 export type TileCode = (typeof T)[keyof typeof T];
 
-export const WALKABLE: ReadonlySet<number> = new Set([
-  T.SIDEWALK,
-  T.ROAD_H,
-  T.ROAD_V,
-  T.CROSSWALK,
-  T.PLAZA,
-  T.GARAGE,
-  T.ARENA,
-]);
+export const WALKABLE: ReadonlySet<number> = new Set([T.SIDEWALK, T.ROAD_H, T.ROAD_V, T.CROSSWALK, T.PLAZA, T.GARAGE, T.ARENA]);
 
 export interface Rect {
   x1: number;
@@ -163,11 +155,26 @@ export class CityGrid {
     g.street(128, 64, 99);
     // Crosswalks at key intersections
     for (const [x, y] of [
-      [30, 68], [44, 68], [30, 92], [44, 92],
-      [60, 20], [88, 20], [112, 20], [128, 20],
-      [60, 34], [88, 34], [112, 34], [128, 34],
-      [60, 72], [88, 72], [112, 72], [128, 72],
-      [60, 88], [88, 88], [112, 88], [128, 88],
+      [30, 68],
+      [44, 68],
+      [30, 92],
+      [44, 92],
+      [60, 20],
+      [88, 20],
+      [112, 20],
+      [128, 20],
+      [60, 34],
+      [88, 34],
+      [112, 34],
+      [128, 34],
+      [60, 72],
+      [88, 72],
+      [112, 72],
+      [128, 72],
+      [60, 88],
+      [88, 88],
+      [112, 88],
+      [128, 88],
     ] as const) {
       g.set(x, y, T.CROSSWALK);
     }
@@ -175,18 +182,40 @@ export class CityGrid {
     // ── Buildings (rects, leaving 1-tile sidewalks) ────────
     const buildings: Rect[] = [
       // Transit north strip
-      { x1: 62, y1: 11, x2: 86, y2: 17 }, { x1: 90, y1: 11, x2: 110, y2: 17 }, { x1: 114, y1: 11, x2: 126, y2: 17 }, { x1: 131, y1: 11, x2: 135, y2: 17 },
+      { x1: 62, y1: 11, x2: 86, y2: 17 },
+      { x1: 90, y1: 11, x2: 110, y2: 17 },
+      { x1: 114, y1: 11, x2: 126, y2: 17 },
+      { x1: 131, y1: 11, x2: 135, y2: 17 },
       // Transit mid (platform block small — keep 90..110 open below row 25)
-      { x1: 62, y1: 23, x2: 86, y2: 25 }, { x1: 90, y1: 23, x2: 110, y2: 25 }, { x1: 114, y1: 23, x2: 126, y2: 25 }, { x1: 131, y1: 23, x2: 135, y2: 25 },
-      { x1: 62, y1: 37, x2: 86, y2: 41 }, { x1: 90, y1: 37, x2: 110, y2: 41 }, { x1: 114, y1: 37, x2: 126, y2: 41 }, { x1: 131, y1: 37, x2: 135, y2: 41 },
+      { x1: 62, y1: 23, x2: 86, y2: 25 },
+      { x1: 90, y1: 23, x2: 110, y2: 25 },
+      { x1: 114, y1: 23, x2: 126, y2: 25 },
+      { x1: 131, y1: 23, x2: 135, y2: 25 },
+      { x1: 62, y1: 37, x2: 86, y2: 41 },
+      { x1: 90, y1: 37, x2: 110, y2: 41 },
+      { x1: 114, y1: 37, x2: 126, y2: 41 },
+      { x1: 131, y1: 37, x2: 135, y2: 41 },
       // Service quarter (north strip ends at row 65 → row 66 is the apron)
-      { x1: 12, y1: 57, x2: 28, y2: 65 }, { x1: 32, y1: 57, x2: 42, y2: 65 }, { x1: 46, y1: 57, x2: 48, y2: 65 },
-      { x1: 26, y1: 71, x2: 42, y2: 80 }, { x1: 26, y1: 82, x2: 42, y2: 89 }, { x1: 46, y1: 71, x2: 48, y2: 89 },
-      { x1: 12, y1: 95, x2: 28, y2: 98 }, { x1: 32, y1: 95, x2: 42, y2: 98 }, { x1: 46, y1: 95, x2: 48, y2: 98 },
+      { x1: 12, y1: 57, x2: 28, y2: 65 },
+      { x1: 32, y1: 57, x2: 42, y2: 65 },
+      { x1: 46, y1: 57, x2: 48, y2: 65 },
+      { x1: 26, y1: 71, x2: 42, y2: 80 },
+      { x1: 26, y1: 82, x2: 42, y2: 89 },
+      { x1: 46, y1: 71, x2: 48, y2: 89 },
+      { x1: 12, y1: 95, x2: 28, y2: 98 },
+      { x1: 32, y1: 95, x2: 42, y2: 98 },
+      { x1: 46, y1: 95, x2: 48, y2: 98 },
       // Power grid (substation plazas carved below)
-      { x1: 63, y1: 67, x2: 86, y2: 69 }, { x1: 90, y1: 67, x2: 110, y2: 69 }, { x1: 114, y1: 67, x2: 126, y2: 69 }, { x1: 131, y1: 67, x2: 135, y2: 69 },
-      { x1: 63, y1: 75, x2: 86, y2: 85 }, { x1: 114, y1: 75, x2: 126, y2: 85 }, { x1: 131, y1: 75, x2: 135, y2: 85 },
-      { x1: 63, y1: 91, x2: 86, y2: 96 }, { x1: 114, y1: 91, x2: 126, y2: 96 }, { x1: 131, y1: 91, x2: 135, y2: 96 },
+      { x1: 63, y1: 67, x2: 86, y2: 69 },
+      { x1: 90, y1: 67, x2: 110, y2: 69 },
+      { x1: 114, y1: 67, x2: 126, y2: 69 },
+      { x1: 131, y1: 67, x2: 135, y2: 69 },
+      { x1: 63, y1: 75, x2: 86, y2: 85 },
+      { x1: 114, y1: 75, x2: 126, y2: 85 },
+      { x1: 131, y1: 75, x2: 135, y2: 85 },
+      { x1: 63, y1: 91, x2: 86, y2: 96 },
+      { x1: 114, y1: 91, x2: 126, y2: 96 },
+      { x1: 131, y1: 91, x2: 135, y2: 96 },
     ];
     for (const b of buildings) g.fillRect(b, T.BUILDING);
 
@@ -200,8 +229,14 @@ export class CityGrid {
     g.fillRect({ x1: 56, y1: 8, x2: 136, y2: 9 }, T.WALL);
     // Power north wall (openings at avenues + relay gate corridor)
     g.fillRect({ x1: 56, y1: 64, x2: 136, y2: 65 }, T.WALL);
-    for (const x of [58, 59, 60, 61, 62, 86, 87, 88, 89, 90, 92, 93, 94, 95, 96, 97, 98, 99, 100, 110, 111, 112, 113, 114, 126, 127, 128, 129, 130]) g.set(x, 64, T.ROAD_V);
-    for (const x of [58, 59, 60, 61, 62, 86, 87, 88, 89, 90, 92, 93, 94, 95, 96, 97, 98, 99, 100, 110, 111, 112, 113, 114, 126, 127, 128, 129, 130]) g.set(x, 65, T.ROAD_V);
+    for (const x of [
+      58, 59, 60, 61, 62, 86, 87, 88, 89, 90, 92, 93, 94, 95, 96, 97, 98, 99, 100, 110, 111, 112, 113, 114, 126, 127, 128, 129, 130,
+    ])
+      g.set(x, 64, T.ROAD_V);
+    for (const x of [
+      58, 59, 60, 61, 62, 86, 87, 88, 89, 90, 92, 93, 94, 95, 96, 97, 98, 99, 100, 110, 111, 112, 113, 114, 126, 127, 128, 129, 130,
+    ])
+      g.set(x, 65, T.ROAD_V);
     // Power south wall
     g.fillRect({ x1: 56, y1: 98, x2: 136, y2: 99 }, T.WALL);
     // Service west + east walls (openings: yard link rows 56..63, roads y68/y92)
@@ -272,7 +307,11 @@ export class CityGrid {
     for (let y = 0; y < H; y++) {
       let runStart = -1;
       for (let x = 0; x <= W; x++) {
-        const solid = x < W && !this.isWalkable(x, y) && this.tile(x, y) !== T.VOID;
+        // doors are handled by the gate sprites (they have their own physics body),
+        // so never merge door tiles into wall rects — otherwise the merged rect
+        // blocks the opening once a gate is destroyed.
+        const tileHere = x < W ? this.tile(x, y) : T.VOID;
+        const solid = x < W && !this.isWalkable(x, y) && tileHere !== T.VOID && tileHere !== T.DOOR;
         if (solid && runStart < 0) runStart = x;
         if (!solid && runStart >= 0) {
           // try to extend the rect upward over already-visited rows
@@ -309,10 +348,31 @@ export class CityGrid {
 // ─────────────────────────────────────────────────────────────
 
 export type PropKind =
-  | 'vehicle' | 'tank' | 'pipe' | 'transformer' | 'puddle' | 'capsule' | 'evacCapsule'
-  | 'memory' | 'relay' | 'uplink' | 'tram' | 'lamp' | 'sign' | 'barrier' | 'wreck'
-  | 'debris' | 'scorch' | 'pillar' | 'core' | 'chargepad' | 'crate' | 'bench' | 'vent'
-  | 'spawn' | 'siren';
+  | 'vehicle'
+  | 'tank'
+  | 'pipe'
+  | 'transformer'
+  | 'puddle'
+  | 'capsule'
+  | 'evacCapsule'
+  | 'memory'
+  | 'relay'
+  | 'uplink'
+  | 'tram'
+  | 'lamp'
+  | 'sign'
+  | 'barrier'
+  | 'wreck'
+  | 'debris'
+  | 'scorch'
+  | 'pillar'
+  | 'core'
+  | 'chargepad'
+  | 'crate'
+  | 'bench'
+  | 'vent'
+  | 'spawn'
+  | 'siren';
 
 export interface PropDef {
   kind: PropKind;
@@ -332,7 +392,7 @@ export const PROPS: PropDef[] = [
   { kind: 'crate', tile: [14, 85] },
   { kind: 'crate', tile: [19, 83] },
   { kind: 'memory', tile: [16, 76], id: 'garageLog' },
-  { kind: 'vehicle', tile: [16, 93], variant: 'damaged', dir: 1 }, // tutorial explosion target
+  { kind: 'vehicle', tile: [17, 84], variant: 'damaged', dir: 1 }, // tutorial explosion target (inside the garage)
   { kind: 'siren', tile: [12, 72] },
   { kind: 'siren', tile: [20, 72] },
   { kind: 'sign', tile: [15, 71], dir: 2, variant: 'cyan' },
@@ -516,16 +576,29 @@ export function validateCity(): string[] {
 
   // player spawn + key POIs walkable
   for (const [x, y, name] of [
-    [16, 82, 'spawn'], [16, 93, 'tutorial vehicle'], [34, 90, 'capsuleA'], [96, 93, 'relay'],
-    [95, 28, 'uplink'], [100, 30, 'eli'], [96, 52, 'core'], [84, 56, 'evac3'],
-    [64, 58, 'decommission'], [76, 48, 'maraOrigin'], [92, 43, 'coreGateLog'],
+    [16, 82, 'spawn'],
+    [17, 84, 'tutorial vehicle'],
+    [34, 90, 'capsuleA'],
+    [96, 93, 'relay'],
+    [95, 28, 'uplink'],
+    [100, 30, 'eli'],
+    [96, 52, 'core'],
+    [84, 56, 'evac3'],
+    [64, 58, 'decommission'],
+    [76, 48, 'maraOrigin'],
+    [92, 43, 'coreGateLog'],
   ] as const) {
     if (!walk(x, y)) errs.push(`${name} (${x},${y}) not walkable`);
   }
   // memory tiles from memories.ts
   const memTiles: Array<readonly [number, number, string]> = [
-    [16, 76, 'garageLog'], [38, 66, 'serviceGrid'], [120, 90, 'powerSpikes'],
-    [76, 18, 'transitHalt'], [86, 60, 'guardianSignal'], [60, 52, 'evac1'], [132, 52, 'evac2'],
+    [16, 76, 'garageLog'],
+    [38, 66, 'serviceGrid'],
+    [120, 90, 'powerSpikes'],
+    [76, 18, 'transitHalt'],
+    [86, 60, 'guardianSignal'],
+    [60, 52, 'evac1'],
+    [132, 52, 'evac2'],
   ];
   for (const [x, y, n] of memTiles) if (!walk(x, y)) errs.push(`memory ${n} (${x},${y}) not walkable`);
 
@@ -541,7 +614,12 @@ export function validateCity(): string[] {
       if (c === target) return true;
       const cx = c % W;
       const cy = (c / W) | 0;
-      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+      for (const [dx, dy] of [
+        [1, 0],
+        [-1, 0],
+        [0, 1],
+        [0, -1],
+      ]) {
         const nx = cx + dx;
         const ny = cy + dy;
         if (nx < 0 || nx >= W || ny < 0 || ny >= H) continue;

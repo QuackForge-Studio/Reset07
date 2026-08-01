@@ -36,8 +36,8 @@ export class Player extends DamageableSprite {
   aimAngle = 0;
   firing = false;
   moving = false;
-  private accel = 1500;
-  private friction = 1500;
+  private accel = 1700;
+  private friction = 1150;
   private dashReady = true;
   private dashCd = 0;
   private dashUntil = 0;
@@ -119,7 +119,6 @@ export class Player extends DamageableSprite {
     this.overdriveCharge = 0;
     this.overdriveUntil = performance.now() + this.overdriveDur * 1000;
     this.odPulseDone = false;
-    this.ev.onOverdrive?.();
   }
 
   dash(dirX: number, dirY: number): void {
@@ -142,7 +141,7 @@ export class Player extends DamageableSprite {
   }
 
   damage(amount: number): void {
-    if (this.invulnerable || this.overdriveActive && this.isDashing) return;
+    if (this.invulnerable || (this.overdriveActive && this.isDashing)) return;
     if (!this.alive) return;
     super.damage(amount);
     this.invulnUntil = performance.now() + 420;
@@ -254,7 +253,7 @@ export class Player extends DamageableSprite {
         (this.scene as Phaser.Scene & { sfx?: (n: string) => void }).sfx?.('dashReady');
       }
     } else {
-      this.heat = Math.max(0, this.heat - (COOL_RATE * (this.modules.includes('cooling') ? 1.35 : 1)) * dt);
+      this.heat = Math.max(0, this.heat - COOL_RATE * (this.modules.includes('cooling') ? 1.35 : 1) * dt);
     }
 
     // ── overdrive pulse ──
@@ -341,7 +340,12 @@ export class Player extends DamageableSprite {
   }
 }
 
-function nearestEnemy(x: number, y: number, enemies: ReadonlyArray<{ x: number; y: number; alive: boolean }>, maxDist: number): { x: number; y: number } | null {
+function nearestEnemy(
+  x: number,
+  y: number,
+  enemies: ReadonlyArray<{ x: number; y: number; alive: boolean }>,
+  maxDist: number,
+): { x: number; y: number } | null {
   let best: { x: number; y: number } | null = null;
   let bd = maxDist * maxDist;
   for (const e of enemies) {
@@ -358,7 +362,12 @@ function nearestEnemy(x: number, y: number, enemies: ReadonlyArray<{ x: number; 
 }
 
 function nearestEnemyInCone(
-  x: number, y: number, angle: number, enemies: ReadonlyArray<{ x: number; y: number; alive: boolean }>, cone: number, maxDist: number,
+  x: number,
+  y: number,
+  angle: number,
+  enemies: ReadonlyArray<{ x: number; y: number; alive: boolean }>,
+  cone: number,
+  maxDist: number,
 ): { x: number; y: number } | null {
   let best: { x: number; y: number } | null = null;
   let bd = maxDist * maxDist;

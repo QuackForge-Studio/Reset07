@@ -7,19 +7,28 @@ Project memory for coding agents. Loaded automatically at the start of every ses
 - Digital brand system + internal guidelines site for **RESET//07**, a top-down neon sci-fi action game in a city trapped in a repeating 7-minute loop.
 - Stack: React 18 + TypeScript + Vite (`base: './'`, target es2019). **No runtime UI dependencies** — all motion is pure CSS; fonts bundled via @fontsource (Chakra Petch, Be Vietnam Pro, IBM Plex Mono).
 - Routes: `/` brand guidelines (internal), `/title` title screen demo, `/loading` loading screen demo.
+- **Game**: `/play` — RESET//07 the game (Phaser 3 + React shell). Stack: TypeScript + Vite. Game code lives in `src/play/` (pure logic in `systems/`+`data/`, Phaser in `scenes/`+`entities/`+`world/`, UI in `ui/`).
+- **Progress log**: `TRACKING.md` at repo root — the durable task log. Update it (one line per item, newest on top) whenever a chunk of work lands or is in progress. Keep AGENTS.md itself terse; point here instead.
 
 ## Commands
 
-| Command | Purpose |
-|---|---|
-| `npm run dev` | Vite dev server |
-| `npm run dev -- --port 5199` | Dev server on the port the smoke scripts expect |
-| `npm run typecheck` | `tsc --noEmit` |
-| `npm run build` | typecheck + `vite build` |
-| `npm run preview` | Preview the production build |
-| `npm run generate:icons` | Regenerate PNG favicon set, maskable icon, favicon.ico/svg (`scripts/generate-icons.mjs`, needs `sharp`) |
-| `npm run smoke` | Playwright smoke test (desktop 1500px + mobile 390px) against `localhost:5199` |
-| `npm run smoke:narrow` | 320px horizontal-overflow check against `localhost:5199` |
+| Command                      | Purpose                                                                                                  |
+| ---------------------------- | -------------------------------------------------------------------------------------------------------- |
+| `npm run dev`                | Vite dev server                                                                                          |
+| `npm test`                   | Run vitest unit tests (49 green: city/combat/endings/loopTimer/modules/objectives/save)                  |
+| `npx tsc --noEmit`           | Same as `npm run typecheck`                                                                              |
+| `npm run dev -- --port 5199` | Dev server on the port the smoke scripts expect                                                          |
+| `npm run typecheck`          | `tsc --noEmit`                                                                                           |
+| `npm run build`              | typecheck + `vite build`                                                                                 |
+| `npm run preview`            | Preview the production build                                                                             |
+| `npm run test:unit`          | Alias for the 49 Vitest logic tests                                                                      |
+| `npm run test:smoke`         | Isolated E2E production-mode game/PWA browser smoke                                                      |
+| `npm run test:production`    | Normal no-debug-hook production build and playable-shell smoke                                           |
+| `npm run test:soak`          | `test:smoke` plus one real-time seven-minute loop/reset check (slow)                                     |
+| `npm run verify`             | typecheck + lint + unit + game smoke + normal build                                                      |
+| `npm run generate:icons`     | Regenerate PNG favicon set, maskable icon, favicon.ico/svg (`scripts/generate-icons.mjs`, needs `sharp`) |
+| `npm run smoke`              | Playwright smoke test (desktop 1500px + mobile 390px) against `localhost:5199`                           |
+| `npm run smoke:narrow`       | 320px horizontal-overflow check against `localhost:5199`                                                 |
 
 Playwright uses system Chrome at `C:/Program Files/Google/Chrome/Application/chrome.exe` (no bundled browser).
 
@@ -35,6 +44,27 @@ Playwright uses system Chrome at `C:/Program Files/Google/Chrome/Application/chr
 - `src/guidelines/` — the `/` page: `sections/*`, `ui.tsx`, `guidelines.css`
 - `public/brand/` — the 5 supplied logo assets (PNG, sourced from `logo/`): `reset07-wordmark.png`, `reset07-wordmark-white.png`, `reset07-wordmark-black.png`, `reset07-wordmark-small.png`, `reset07-icon.png`
 - `scripts/` — `generate-icons.mjs`, `smoke-test.mjs`, `narrow-check.mjs`
+- `src/play/` — the game:
+  - `systems/` — pure logic: `LoopTimer.ts` (7-min state machine), `SaveSystem.ts`, `combat.ts`, `Pathfinder.ts`, `AudioEngine.ts`, `CameraRig.ts`, `Explosions.ts`, `Effects.ts`, `InputState.ts`
+  - `data/` — data-driven: endings, modules, memories, objectives, enemies, fx presets, dialogue, tutorials, strings (EN+VI)
+  - `world/` — `cityData.ts` (deterministic 144×104 tile grid) + `CityBuilder.ts`
+  - `scenes/` — `WorldScene.ts` (orchestrator + `window.__r07` debug hook), `BootScene.ts`
+  - `entities/` — Player, 4 enemies, CoreGuardian boss, environment props
+  - `ui/` — GameShell, TitleScreen, HUD, TouchControls, DialoguePanel, PauseMenu, SettingsPanel, MemoryBoard, GarageScreen, EndingScreen
+- QA probes: `scripts/probe*.mjs` + `qa-game.mjs` (Playwright against `localhost:5199`, system Chrome). Temporary — delete after QA lands.
+
+## Game gotchas (durable)
+
+- **Movement tuning**: `Player` `accel` must stay **above** `friction` (1700 vs 1150). Equal values make friction exactly cancel acceleration → player never moves.
+- **Gates**: DOOR tiles are excluded from `collisionRects()` (wall rects). The `Gate` sprite has its own physics body that is destroyed on `openGate()` — don't re-add DOOR tiles to wall rects or opening a gate leaves an invisible wall.
+- **Scene restart**: Phaser `scene.restart()` reuses the same instance, so class-field arrays (`explosiveProps`, `enemyList`, `interactables`, `lamps`, opening flags) must be reset at the top of `create()` or they accumulate duplicates.
+- **Bullets × explosives**: uses a real `Phaser.Physics.Arcade.Group` (`explosiveGroup`), registered from `explosiveProps` in `create()`.
+- **Explosive fuse**: `onComplete` must not bail on `!this.scene` — the prop's scene ref dies before the tween completes; capture `scene` in the closure.
+- **QA probes**: heat weapon overheats after ~20 shots — bursts (release ~0.4s per 1.3s) avoid perma-overheat. Canvas needs a click for keyboard focus. Garage gate is at tiles x14-18 — sidestep into that x-range before walking south.
+
+- **Gate colliders**: closed Gate sprites must remain immovable and retain player/enemy colliders; destroy those colliders when the gate opens.
+- **Touch controls**: reset `touchInput` on pause, unmount, resize, and orientation change. Keep the pause button outside the bottom control grid so it cannot overlap OPEN.
+- **E2E hook**: `window.__r07` is available only in DEV or `VITE_E2E=true`; normal production builds must not expose it.
 
 ## Brand rules (non-negotiable)
 
@@ -55,5 +85,6 @@ Playwright uses system Chrome at `C:/Program Files/Google/Chrome/Application/chr
 ## Maintenance protocol
 
 - This file is pi's project memory. When you discover a **durable fact** (new command, convention, decision, gotcha, structure change), update this file in the same session: add one terse line, or edit the stale entry — never stack duplicates.
+- Keep a running **`TRACKING.md`** log: when a chunk of work lands, add one line there (and mark it in progress while working). Don't log transient detail (one-off bug fixes, session trivia) in AGENTS.md — that goes in TRACKING.md's gotchas section.
 - Do **not** log transient detail (one-off bug fixes, session trivia).
 - If the user asks to refresh/update project memory, load the project skill `maintain-project-memory` and follow it.

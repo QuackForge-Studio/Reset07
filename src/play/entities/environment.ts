@@ -25,7 +25,7 @@ export interface ExplosiveConfig {
   smokeAt?: number; // hp fraction below which it smokes
   fireAt?: number; // hp fraction below which it burns
   onDestroyed?: (e: Explosive) => void;
-  explosionRadiusMul?: number;
+  explodeOnDeath?: boolean; // false = leak/damaged state instead (gas pipes)
 }
 
 export class Explosive extends DamageableSprite {
@@ -46,7 +46,22 @@ export class Explosive extends DamageableSprite {
     if (!this.alive || this.detonating) return;
     super.damage(amount);
     this.updateState();
-    this.sceneWfx().spawnSpark(this.x, this.y, PAL.orange, (Math.random() - 0.5) * 120, (Math.random() - 0.5) * 120, 0.2, 1);
+    this.sceneWfx()?.spawnSpark(this.x, this.y, PAL.orange, (Math.random() - 0.5) * 120, (Math.random() - 0.5) * 120, 0.2, 1);
+  }
+
+  /** Lethal damage → warning fuse → detonation (the visible chain rule). */
+  die(): void {
+    if (this.detonating) return;
+    if (this.cfg.explodeOnDeath === false) {
+      // e.g. gas pipes: they leak, they never detonate on their own
+      this.startLeak();
+      this.hp = Math.max(1, this.hp);
+      this.state = 'damaged';
+      return;
+    }
+    this.detonating = true;
+    this.state = 'critical';
+    this.startFuse(this.x, this.y);
   }
 
   takeExplosionDamage(damage: number, kind: ExplosionKind, x: number, y: number): boolean {
@@ -69,10 +84,16 @@ export class Explosive extends DamageableSprite {
     if (this.detonating || !this.alive) return;
     this.detonating = true;
     this.state = 'critical';
-    this.setTint(PAL.white);
+    this.startFuse(x, y);
+  }
+
+  private startFuse(blastX: number, blastY: number): void {
     const scene = this.sceneW();
+    if (!scene || !scene.sfx) return;
     scene.sfx('beep');
-    // flashing warning
+    // a destroyed prop must still complete its fuse — run the fuse on a proxy
+    if (!this.active || !this.scene) return;
+    this.setTintFill(PAL.white);
     scene.tweens.add({
       targets: this,
       alpha: 0.35,
@@ -80,19 +101,17 @@ export class Explosive extends DamageableSprite {
       yoyo: true,
       repeat: Math.max(1, Math.floor(this.cfg.warnMs / 180)),
       onComplete: () => {
-        if (!this.alive) return;
-        this.detonate(x, y);
+        this.alive = false;
+        this.state = 'destroyed';
+        scene.explosions?.explode(this.cfg.boomKind, blastX, blastY, { sourceId: this.id });
+        this.cfg.onDestroyed?.(this);
+        this.destroy();
       },
     });
   }
 
-  protected detonate(x: number, y: number): void {
-    if (!this.alive) return;
-    this.alive = false;
-    this.state = 'destroyed';
-    this.sceneW().explosions.explode(this.cfg.boomKind, x, y, { sourceId: this.id });
-    this.cfg.onDestroyed?.(this);
-    this.destroy();
+  protected startLeak(): void {
+    // overridden by GasPipe; base = nothing
   }
 
   protected updateState(): void {
@@ -106,13 +125,15 @@ export class Explosive extends DamageableSprite {
   }
 
   protected sceneWfx() {
-    return this.sceneW().fx;
+    const w = this.sceneW();
+    return w ? w.fx : null;
   }
 
   update(dt: number): void {
     if (!this.alive) return;
     this.applyFlashAndKnock(dt);
     const fx = this.sceneWfx();
+    if (!fx) return;
     if (this.state === 'damaged') {
       this.smokeTimer -= dt;
       if (this.smokeTimer <= 0) {
@@ -202,6 +223,7 @@ export class GasPipe extends Explosive {
       warnMs: 420,
       boomKind: 'gas',
       smokeAt: 0.55,
+      explodeOnDeath: false, // pipes leak when destroyed; only ignition detonates them
     });
     this.dir = dir;
     this.len = len;
@@ -229,13 +251,14 @@ export class GasPipe extends Explosive {
   }
 
   damage(amount: number): void {
+    if (this.detonating) return;
     super.damage(amount);
-    if (this.alive && this.state === 'damaged' && this.leakFx.length === 0) {
+    if (this.state === 'damaged' && this.leakFx.length === 0) {
       this.startLeak();
     }
   }
 
-  private startLeak(): void {
+  protected startLeak(): void {
     const scene = this.sceneW();
     scene.sfx('gasIgnite');
     // leak puffs along the pipe
@@ -354,8 +377,7 @@ export function conductPuddles(scene: WorldScene, startX: number, startY: number
   const puddles = scene.puddleList;
   const visited = new Set<Puddle>();
   const queue: Puddle[] = [];
-  const near = (px: number, py: number, r: number) =>
-    puddles.filter((p) => !visited.has(p) && (p.x - px) ** 2 + (p.y - py) ** 2 < r * r);
+  const near = (px: number, py: number, r: number) => puddles.filter((p) => !visited.has(p) && (p.x - px) ** 2 + (p.y - py) ** 2 < r * r);
   for (const p of near(startX, startY, 130)) {
     visited.add(p);
     queue.push(p);
@@ -436,6 +458,7 @@ export class Uplink extends DamageableSprite {
     return !this.alive;
   }
 
+  /** Bullets damage the uplink normally. */
   damage(amount: number): void {
     if (!this.alive) return;
     super.damage(amount);
@@ -683,7 +706,15 @@ export class Gate extends DamageableSprite {
   private cfg: { onOpened?: (id: string) => void };
   private pulse = 0;
 
-  constructor(scene: Phaser.Scene, x: number, y: number, w: number, h: number, gateId: string, cfg: { onOpened?: (id: string) => void } = {}) {
+  constructor(
+    scene: Phaser.Scene,
+    x: number,
+    y: number,
+    w: number,
+    h: number,
+    gateId: string,
+    cfg: { onOpened?: (id: string) => void } = {},
+  ) {
     super(scene, x, y, 'gate', 120, {});
     this.sceneW = scene as WorldScene;
     this.gateId = gateId;
@@ -691,6 +722,8 @@ export class Gate extends DamageableSprite {
     this.setDepth(55);
     this.setDisplaySize(w, h);
     this.refreshBody();
+    this.setImmovable(true);
+    this.setPushable(false);
     // horizontal gates: widen body; vertical: tall body
     if (w > h) {
       (this.body as Phaser.Physics.Arcade.Body).setSize(w, 18, true);
@@ -737,6 +770,7 @@ export class Gate extends DamageableSprite {
     return !this.alive;
   }
 
+  /** Bullets damage the uplink normally. */
   update(dt: number): void {
     this.pulse += dt * 3;
     this.setAlpha(0.75 + Math.sin(this.pulse) * 0.25);
@@ -783,7 +817,13 @@ export class Tram extends Phaser.GameObjects.Image {
 // ─────────────────────────────────────────────────────────────
 
 export class DecorativeProp extends Phaser.GameObjects.Image {
-  constructor(scene: Phaser.Scene, x: number, y: number, texture: string, opts: { depth?: number; rotation?: number; tint?: number; scale?: number; flicker?: boolean } = {}) {
+  constructor(
+    scene: Phaser.Scene,
+    x: number,
+    y: number,
+    texture: string,
+    opts: { depth?: number; rotation?: number; tint?: number; scale?: number; flicker?: boolean } = {},
+  ) {
     super(scene, x, y, texture);
     scene.add.existing(this);
     this.setDepth(opts.depth ?? 44);

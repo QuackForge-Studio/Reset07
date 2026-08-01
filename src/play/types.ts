@@ -37,6 +37,7 @@ export interface WorldScene extends Phaser.Scene {
   lamps: Array<{ pole: DecorativeProp; light: Phaser.GameObjects.Image }>;
   coreShell: Phaser.GameObjects.Image | null;
   enemyList: EnemyBase[];
+  explosiveGroup: Phaser.Physics.Arcade.Group;
   enemyBolts: Phaser.Physics.Arcade.Group;
   playerBolts: Phaser.Physics.Arcade.Group;
   explosiveProps: Explosive[];

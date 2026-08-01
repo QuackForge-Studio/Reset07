@@ -13,14 +13,14 @@ import { audio } from '../systems/AudioEngine';
 import { EffectManager } from '../systems/Effects';
 import { ExplosionSystem } from '../systems/Explosions';
 import { CameraRig } from '../systems/CameraRig';
-import { InputManager } from '../systems/InputState';
+import { InputManager, resetTouchInput, touchInput } from '../systems/InputState';
 import { LoopTimer } from '../systems/LoopTimer';
 import { buildCity } from '../world/CityBuilder';
-import { districtAt, TILE, type GateDef } from '../world/cityData';
+import { districtAt, GATES, TILE, type GateDef } from '../world/cityData';
 import { Player, boltDamage } from '../entities/Player';
 import { createEnemy, ShieldUnit, type EnemyBase } from '../entities/enemies';
 import { CoreGuardian } from '../entities/boss';
-import { RescueCapsule, MemoryCrystal, Relay, EvacCapsule, type Interactable, type Explosive } from '../entities/environment';
+import { RescueCapsule, MemoryCrystal, Relay, EvacCapsule, Explosive, type Interactable } from '../entities/environment';
 import { DamageableSprite } from '../entities/base';
 import { buildLoopPlan, ObjectiveTracker } from '../data/objectives';
 import { MEMORY_FLAGS, dialogueById, type DialogueLineDef } from '../data/dialogue';
@@ -50,6 +50,7 @@ export class WorldScene extends Phaser.Scene implements WorldSceneI {
   flags = new Set<string>();
   collideWalls!: Phaser.Physics.Arcade.StaticGroup;
   enemyGroup!: Phaser.Physics.Arcade.Group;
+  explosiveGroup!: Phaser.Physics.Arcade.Group;
   puddleList: import('../entities/environment').Puddle[] = [];
   lamps: Array<{ pole: import('../entities/environment').DecorativeProp; light: Phaser.GameObjects.Image }> = [];
   coreShell: Phaser.GameObjects.Image | null = null;
@@ -67,6 +68,8 @@ export class WorldScene extends Phaser.Scene implements WorldSceneI {
   private openingStep = 0;
   private openingDrone: EnemyBase | null = null;
   private openingDrone2: EnemyBase | null = null;
+  private openingDroneDead = false;
+  private openingDrone2Dead = false;
   private introDone = false;
   private tutorialDone = new Set<string>();
   private dialogueQueue: DialogueLineDef[] = [];
@@ -98,6 +101,48 @@ export class WorldScene extends Phaser.Scene implements WorldSceneI {
   }
 
   create(): void {
+    // ── reset per-instance state (scene.restart() reuses this instance) ──
+    this.puddleList.length = 0;
+    this.explosiveProps.length = 0;
+    this.enemyList.length = 0;
+    this.interactables.length = 0;
+    this.gates = [];
+    this.spawnData = [];
+    this.lamps.length = 0;
+    this.coreShell = null;
+    this.boss = null;
+    this.openingDrone = null;
+    this.openingDrone2 = null;
+    this.openingStep = 1;
+    this.openingVehicleGone = false;
+    this.openingDroneDead = false;
+    this.openingDrone2Dead = false;
+    this.introDone = false;
+    this.tutorialDone.clear();
+    this.dialogueQueue.length = 0;
+    this.currentDialogue = null;
+    this.dialogueTimer = 0;
+    this.choicePending = false;
+    this.currentInteract = null;
+    this.interactHold = 0;
+    this.hudTimer = 0;
+    this.spawnTimer = 3;
+    this.ambTimer = 0;
+    this.stats = { kills: 0, rescues: 0, chains: 0 };
+    this.newMemories = 0;
+    this.deathTimer = -1;
+    this.resetTimer = -1;
+    this.endingScript = [];
+    this.endingTime = 0;
+    this.pendingEnding = null;
+    this.sirenTimer = 0;
+    this.bossActive = false;
+    this.bossTriggered = false;
+    this.loopState = 'opening';
+    for (const unsubscribe of this.unsubs) unsubscribe();
+    this.unsubs = [];
+    this.events.off('boss-collapse');
+
     // ── settings / registry ──
     this.save = saveSystem.load().data;
     this.flags = new Set([...this.save.memories, ...this.save.dialogueSeen, ...this.save.flags]);
@@ -139,21 +184,12 @@ export class WorldScene extends Phaser.Scene implements WorldSceneI {
     this.gates = built.gates;
     this.spawnData = built.spawnPoints;
     this.enemyGroup = this.physics.add.group();
+    this.explosiveGroup = this.physics.add.group();
     this.enemyBolts = this.physics.add.group();
     this.playerBolts = this.physics.add.group();
-    this.physics.add.collider(this.playerBolts, this.collideWalls, (bolt) => this.boltHitWall(bolt as Phaser.GameObjects.Sprite));
-    this.physics.add.collider(this.enemyBolts, this.collideWalls, (bolt) => this.boltHitWall(bolt as Phaser.GameObjects.Sprite));
-    this.physics.add.collider(this.player, this.collideWalls);
-    this.physics.add.collider(this.enemyGroup, this.collideWalls);
+    for (const p of this.explosiveProps) this.explosiveGroup.add(p as Phaser.GameObjects.Sprite);
 
-    // gates: pre-open from persistent routes
-    for (const { gate, def } of this.gates) {
-      if (def.id === 'coreS' && this.save.routes.includes('relayCode')) gate.openGate();
-      if (def.id === 'coreW' && this.save.routes.includes('maintenance')) gate.openGate();
-      this.explosions.register(gate);
-    }
-
-    // ── player ──
+    // ── player (must exist before colliders reference it) ──
     const spawn = TILE_CENTER(16, 82);
     this.playerPos = { ...spawn };
     this.player = new Player(this, spawn.x, spawn.y, this.fx, this.save.modulesEquipped as import('../data/modules').ModuleId[], {
@@ -165,7 +201,46 @@ export class WorldScene extends Phaser.Scene implements WorldSceneI {
       onHit: (dmg) => this.onPlayerHit(dmg),
       onWeaponArc: (x, y) => this.arcChain(x, y),
     });
-    this.physics.add.collider(this.player, this.enemyList);
+
+    // ── colliders / overlaps ──
+    this.physics.add.collider(this.playerBolts, this.collideWalls, (bolt) => this.boltHitWall(bolt as Phaser.GameObjects.Sprite));
+    this.physics.add.collider(this.enemyBolts, this.collideWalls, (bolt) => this.boltHitWall(bolt as Phaser.GameObjects.Sprite));
+    this.physics.add.collider(this.player, this.collideWalls);
+    this.physics.add.collider(this.enemyGroup, this.collideWalls);
+    for (const { gate } of this.gates) {
+      const playerGateCollider = this.physics.add.collider(this.player, gate);
+      const enemyGateCollider = this.physics.add.collider(this.enemyGroup, gate);
+      gate.once('destroy', () => {
+        playerGateCollider.destroy();
+        enemyGateCollider.destroy();
+      });
+    }
+    this.physics.add.overlap(this.playerBolts, this.enemyGroup, (bolt, enemy) =>
+      this.boltHitEnemy(bolt as Phaser.GameObjects.Sprite, enemy as DamageableSprite),
+    );
+    this.physics.add.overlap(this.enemyBolts, this.player, (bolt) => this.enemyBoltHitPlayer(bolt as Phaser.GameObjects.Sprite));
+    // bullets damage explosives: player bolts (the core chain mechanic) + enemy bolts (drones can set off chains)
+    this.physics.add.overlap(this.playerBolts, this.explosiveGroup, (bolt, prop) => {
+      const b = bolt as Phaser.GameObjects.Sprite;
+      if (!b.active || !(prop instanceof Explosive)) return;
+      b.destroy();
+      prop.damage(8);
+      this.fx.spawnSpark(b.x, b.y, PAL.orange, (Math.random() - 0.5) * 80, (Math.random() - 0.5) * 80, 0.15, 0.8);
+    });
+    this.physics.add.overlap(this.enemyBolts, this.explosiveGroup, (bolt, prop) => {
+      const b = bolt as Phaser.GameObjects.Sprite;
+      if (!b.active || !(prop instanceof Explosive)) return;
+      b.destroy();
+      prop.damage(8);
+    });
+
+    // gates: pre-open from persistent routes
+    for (const { gate, def } of this.gates) {
+      if (def.id === 'coreS' && this.save.routes.includes('relayCode')) gate.openGate();
+      if (def.id === 'coreW' && this.save.routes.includes('maintenance')) gate.openGate();
+      this.explosions.register(gate);
+    }
+
     this.rig.setFollow(this.playerPos);
 
     // ── objectives + loop ──
@@ -187,10 +262,6 @@ export class WorldScene extends Phaser.Scene implements WorldSceneI {
       },
       onReset: () => this.startResetSequence(),
     });
-
-    // ── colliders: bolts vs enemies / player ──
-    this.physics.add.overlap(this.playerBolts, this.enemyList, (bolt, enemy) => this.boltHitEnemy(bolt as Phaser.GameObjects.Sprite, enemy as DamageableSprite));
-    this.physics.add.overlap(this.enemyBolts, this.player, (bolt) => this.enemyBoltHitPlayer(bolt as Phaser.GameObjects.Sprite));
 
     // register damageables (the player takes explosion damage via the callback)
     for (const p of this.explosiveProps) this.explosions.register(p);
@@ -221,11 +292,12 @@ export class WorldScene extends Phaser.Scene implements WorldSceneI {
     this.loopState = 'opening';
     this.runOpening();
 
-    // dev QA hook (never shipped in prod bundles)
-    if (import.meta.env.DEV) {
+    // Dev/test-only QA hook. Production bundles do not receive this object.
+    if (import.meta.env.DEV || import.meta.env.VITE_E2E === 'true') {
       (window as unknown as Record<string, unknown>).__r07 = {
         scene: this,
         player: this.player,
+        touchInput,
         worldToScreen: (wx: number, wy: number) => {
           const cam = this.cameras.main;
           return { x: (wx - cam.scrollX) * cam.zoom, y: (wy - cam.scrollY) * cam.zoom };
@@ -276,7 +348,7 @@ export class WorldScene extends Phaser.Scene implements WorldSceneI {
       case 2: {
         // spawn the first drone after the player moves a little
         if (this.tutorialDone.has('move') && !this.openingDrone) {
-          this.openingDrone = this.spawnEnemyAt('drone', 688, 2544);
+          this.openingDrone = this.spawnEnemyAt('drone', 600, 2550, true); // flies in through the hatch, hovers inside
           this.openingDrone.setAlpha(0);
           this.tweens.add({ targets: this.openingDrone, alpha: 1, duration: 600 });
           this.openingStep = 3;
@@ -285,18 +357,19 @@ export class WorldScene extends Phaser.Scene implements WorldSceneI {
       }
       case 3: {
         // drone killed → queue Mara line + spawn drone 2 + vehicle hint
-        if (this.openingDrone && !this.openingDrone.alive) {
-          this.openingDrone = null;
+        if (this.openingDroneDead) {
+          this.openingDroneDead = false;
           this.openingStep = 4;
           this.queueDialogue('open4');
-          this.openingDrone2 = this.spawnEnemyAt('drone', 560, 3008);
+          this.openingDrone2 = this.spawnEnemyAt('drone', 568, 2696, true); // hovers beside the damaged vehicle
           this.showTutorial('vehicle', false);
         }
         break;
       }
       case 4: {
-        if (this.openingDrone2 && !this.openingDrone2.alive) {
-          this.openingDrone2 = null;
+        // drone 2 dead → small reward
+        if (this.openingDrone2Dead) {
+          this.openingDrone2Dead = false;
           this.player.addOverdriveCharge(8);
         }
         // vehicle destroyed (blast opens gate) → dash tutorial
@@ -348,6 +421,8 @@ export class WorldScene extends Phaser.Scene implements WorldSceneI {
         return;
       }
 
+      if (input.dashPressed) this.player.dash(input.moveX, input.moveY);
+      if (input.overdrivePressed) this.player.tryOverdrive();
       this.player.update(dt, input, this.enemyList);
 
       // enemies
@@ -364,6 +439,16 @@ export class WorldScene extends Phaser.Scene implements WorldSceneI {
         b.setData('life', (b.getData('life') ?? 0) - dt);
         if (b.getData('life') <= 0) b.destroy();
         else if (b.x < 0 || b.x > 4608 || b.y < 0 || b.y > 3328) b.destroy();
+      }
+      // player bolts (life + bounds)
+      for (const b of this.playerBolts.getChildren() as Phaser.GameObjects.Sprite[]) {
+        b.setData('life', (b.getData('life') ?? 0) - dt);
+        if (b.getData('life') <= 0 || b.x < 0 || b.x > 4608 || b.y < 0 || b.y > 3328) b.destroy();
+      }
+
+      // dialogue skip: pressing E during a line advances it
+      if (input.interactPressed && this.currentDialogue && !this.choicePending) {
+        this.dialogueTimer = 0;
       }
 
       // interact prompt
@@ -419,13 +504,13 @@ export class WorldScene extends Phaser.Scene implements WorldSceneI {
 
   firePlayerBolt(x: number, y: number, angle: number): void {
     const b = this.physics.add.sprite(x, y, 'bullet');
+    this.playerBolts.add(b); // add BEFORE setting velocity (group add resets the body)
     b.setRotation(angle);
     b.setDepth(70);
     const body = b.body as Phaser.Physics.Arcade.Body;
-    body.setVelocity(Math.cos(angle) * 640, Math.sin(angle) * 640);
     body.setCircle(4, 8, 1);
+    body.setVelocity(Math.cos(angle) * 640, Math.sin(angle) * 640);
     b.setData('life', 0.7);
-    this.playerBolts.add(b);
     // muzzle flash
     const m = this.add.image(x, y, 'fx-muzzle');
     m.setRotation(angle);
@@ -601,7 +686,16 @@ export class WorldScene extends Phaser.Scene implements WorldSceneI {
   // ─────────────────────────────────────────────────────────
 
   private onLoopPhase(phase: import('../systems/LoopTimer').LoopPhase): void {
-    const music = phase === 'RESETTING' || phase === 'DONE' ? 0 : phase === 'FINAL10' || phase === 'FINAL' ? 4 : phase === 'DANGER' ? 3 : phase === 'RISING' ? 2 : 1;
+    const music =
+      phase === 'RESETTING' || phase === 'DONE'
+        ? 0
+        : phase === 'FINAL10' || phase === 'FINAL'
+          ? 4
+          : phase === 'DANGER'
+            ? 3
+            : phase === 'RISING'
+              ? 2
+              : 1;
     if (this.bossActive) audio.musicIntensity(4);
     else audio.musicIntensity(music);
     if (phase === 'DANGER') {
@@ -641,7 +735,15 @@ export class WorldScene extends Phaser.Scene implements WorldSceneI {
       if (Math.random() < 0.4) {
         const a = Math.random() * Math.PI * 2;
         const r = 500 + Math.random() * 400;
-        this.fx.spawnSpark(this.player.x + Math.cos(a) * r, this.player.y + Math.sin(a) * r, Math.random() < 0.5 ? PAL.cyan : PAL.magenta, -Math.cos(a) * 500, -Math.sin(a) * 500, 0.5, 1.2);
+        this.fx.spawnSpark(
+          this.player.x + Math.cos(a) * r,
+          this.player.y + Math.sin(a) * r,
+          Math.random() < 0.5 ? PAL.cyan : PAL.magenta,
+          -Math.cos(a) * 500,
+          -Math.sin(a) * 500,
+          0.5,
+          1.2,
+        );
       }
       if (t > 1.4 && this.flashOverlay.alpha < 0.8) {
         this.flashOverlay.setFillStyle(PAL.white, Math.min(0.9, t * 0.4));
@@ -695,14 +797,17 @@ export class WorldScene extends Phaser.Scene implements WorldSceneI {
 
   pauseGame(): void {
     if (this.loopState !== 'playing') return;
+    resetTouchInput();
     this.loopTimer.pause();
     updateSnapshot({ paused: true });
     bus.emit('screen', 'paused');
     audio.duck(1);
+    this.scene.pause();
   }
 
   resumeGame(): void {
     if (this.loopState !== 'playing' && this.loopState !== 'opening') return;
+    this.scene.resume();
     this.loopTimer.resume();
     updateSnapshot({ paused: false });
     audio.duck(0);
@@ -710,11 +815,13 @@ export class WorldScene extends Phaser.Scene implements WorldSceneI {
 
   restartLoop(): void {
     this.saveNow();
+    this.scene.resume();
     this.scene.restart();
   }
 
   quitToTitle(): void {
     this.saveNow();
+    this.scene.resume();
     audio.musicStop();
     bus.emit('screen', 'title');
     this.scene.stop();
@@ -730,6 +837,24 @@ export class WorldScene extends Phaser.Scene implements WorldSceneI {
 
   openDoor(gateId: string): void {
     this.pathfinder.setDoorOpen(gateId, true);
+    // remove the physical colliders covering this gate's tiles so entities can pass
+    const def = GATES.find((g) => g.id === gateId);
+    if (!def) return;
+    const gx1 = def.rect.x1 * TILE;
+    const gy1 = def.rect.y1 * TILE;
+    const gx2 = (def.rect.x2 + 1) * TILE;
+    const gy2 = (def.rect.y2 + 1) * TILE;
+    for (const child of this.collideWalls.getChildren()) {
+      const b = (child as Phaser.GameObjects.Zone).body as Phaser.Physics.Arcade.StaticBody | undefined;
+      if (!b) continue;
+      const ox1 = b.x;
+      const oy1 = b.y;
+      const ox2 = b.x + b.width;
+      const oy2 = b.y + b.height;
+      if (ox1 < gx2 && ox2 > gx1 && oy1 < gy2 && oy2 > gy1) {
+        (child as Phaser.GameObjects.Zone).destroy();
+      }
+    }
   }
 
   onGateOpened(def: GateDef): void {
@@ -768,7 +893,7 @@ export class WorldScene extends Phaser.Scene implements WorldSceneI {
   }
 
   onEvacOpened(_id: string): void {
-    const evacCount = (this.registry.get('evacCount') as number ?? 0) + 1;
+    const evacCount = ((this.registry.get('evacCount') as number) ?? 0) + 1;
     this.registry.set('evacCount', evacCount);
     this.sfx('objective');
     if (evacCount >= 3 && !this.save.flags.includes('evacDone')) {
@@ -904,7 +1029,7 @@ export class WorldScene extends Phaser.Scene implements WorldSceneI {
       this.choicePending = true;
       this.dialogueTimer = 0;
     } else {
-      this.dialogueTimer = Math.max(2.6, 1.6 + def.text.length * 0.045);
+      this.dialogueTimer = Math.max(1.8, 1.1 + def.text.length * 0.032);
     }
     bus.emit('dialogue', line);
   }
@@ -1022,11 +1147,15 @@ export class WorldScene extends Phaser.Scene implements WorldSceneI {
   private showTutorial(id: string, _force: boolean): void {
     const def = TUTORIALS.find((t) => t.id === id);
     if (!def) return;
-    if (this.save.tutorialsDone.includes(id)) return;
+    if (this.save.tutorialsDone.includes(id)) {
+      // already learned in a past loop — mark for script flow but don't re-teach
+      this.tutorialDone.add(id);
+      return;
+    }
     if (this.tutorialDone.has(id)) return;
     this.tutorialDone.add(id);
     this.save.tutorialsDone.push(id);
-    const controlKey = def.control === 'overdrive' ? 'od' : def.control ?? '';
+    const controlKey = def.control === 'overdrive' ? 'od' : (def.control ?? '');
     const text = def.control ? t(def.textKey, { [controlKey]: this.inputMgr.label(def.control) }) : t(def.textKey);
     bus.emit('toast', { text, tone: 'info' });
     this.saveNow();
@@ -1068,22 +1197,31 @@ export class WorldScene extends Phaser.Scene implements WorldSceneI {
   // Spawning
   // ─────────────────────────────────────────────────────────
 
-  spawnEnemyAt(kind: EnemyKind, x: number, y: number): EnemyBase {
-    const e = createEnemy(this, kind, x, y, this.playerPos, {
-      onDeath: (enemy, byExplosion) => {
-        this.enemyList = this.enemyList.filter((n) => n !== enemy);
-        this.explosions.unregister(enemy);
-        if (this.loopState === 'playing' || this.loopState === 'opening') {
-          this.stats.kills++;
-          this.player.addOverdriveCharge(byExplosion ? 6 : 4);
-        }
-        if (enemy === this.openingDrone) this.openingDrone = null;
+  spawnEnemyAt(kind: EnemyKind, x: number, y: number, training = false): EnemyBase {
+    const e = createEnemy(
+      this,
+      kind,
+      x,
+      y,
+      this.playerPos,
+      {
+        onDeath: (enemy, byExplosion) => {
+          this.enemyList = this.enemyList.filter((n) => n !== enemy);
+          this.explosions.unregister(enemy);
+          if (this.loopState === 'playing' || this.loopState === 'opening') {
+            this.stats.kills++;
+            this.player.addOverdriveCharge(byExplosion ? 6 : 4);
+          }
+          if (enemy === this.openingDrone) this.openingDroneDead = true;
+          if (enemy === this.openingDrone2) this.openingDrone2Dead = true;
+        },
+        onPlayerHit: (dmg) => {
+          if (e.alive) this.damagePlayer(dmg, e.x, e.y);
+        },
+        onShieldStun: () => this.sfx('explosionElectric'),
       },
-      onPlayerHit: (dmg) => {
-        if (e.alive) this.damagePlayer(dmg, e.x, e.y);
-      },
-      onShieldStun: () => this.sfx('explosionElectric'),
-    });
+      training,
+    );
     this.enemyList.push(e);
     this.enemyGroup.add(e);
     this.explosions.register(e);
@@ -1120,7 +1258,8 @@ export class WorldScene extends Phaser.Scene implements WorldSceneI {
     this.spawnTimer -= dt;
     if (this.spawnTimer > 0) return;
     this.spawnTimer = 2.6;
-    const phaseIdx = this.loopTimer.phase === 'CALM' ? 0 : this.loopTimer.phase === 'RISING' ? 1 : this.loopTimer.phase === 'DANGER' ? 2 : 3;
+    const phaseIdx =
+      this.loopTimer.phase === 'CALM' ? 0 : this.loopTimer.phase === 'RISING' ? 1 : this.loopTimer.phase === 'DANGER' ? 2 : 3;
     const pts = this.spawnData;
     // count per district
     const counts = new Map<string, number>();
@@ -1169,6 +1308,7 @@ export class WorldScene extends Phaser.Scene implements WorldSceneI {
       onPlayerHit: (dmg) => this.damagePlayer(dmg, this.boss!.x, this.boss!.y),
       onSummon: (e) => {
         this.enemyList.push(e as EnemyBase);
+        this.enemyGroup.add(e as Phaser.GameObjects.Sprite);
         this.explosions.register(e);
       },
       onRemoveSummon: (e) => {
@@ -1176,6 +1316,7 @@ export class WorldScene extends Phaser.Scene implements WorldSceneI {
         this.explosions.unregister(e);
       },
     });
+    this.enemyGroup.add(this.boss);
     this.explosions.register(this.boss);
     this.rig.focusOn(center.x, center.y, 1.05);
     this.queueDialogue('core1', 'core2', 'guardianChallenge');
@@ -1255,11 +1396,43 @@ export class WorldScene extends Phaser.Scene implements WorldSceneI {
       const shell = this.coreShell;
       const sx = shell ? shell.x : cx;
       const sy = shell ? shell.y : cy;
-      this.endingScript.push({ at: 1.0, fn: () => { this.explosions.explode('final', sx, sy); this.rig.slowMo(0.3, 900); } });
-      this.endingScript.push({ at: 1.5, fn: () => { this.explosions.explode('boss', sx - 140, sy + 60); this.explosions.explode('boss', sx + 130, sy - 80); } });
-      this.endingScript.push({ at: 2.1, fn: () => { this.explosions.explode('final', sx + 60, sy - 100); this.explosions.explode('large', sx - 90, sy - 60); } });
-      this.endingScript.push({ at: 2.8, fn: () => { this.explosions.explode('final', sx - 40, sy + 90); this.explosions.explode('large', sx + 100, sy + 40); this.rig.addShake(14, 400); } });
-      this.endingScript.push({ at: 3.6, fn: () => { this.explosions.explode('final', sx, sy); this.rig.slowMo(0.25, 1500); this.sfx('explosionLarge'); } });
+      this.endingScript.push({
+        at: 1.0,
+        fn: () => {
+          this.explosions.explode('final', sx, sy);
+          this.rig.slowMo(0.3, 900);
+        },
+      });
+      this.endingScript.push({
+        at: 1.5,
+        fn: () => {
+          this.explosions.explode('boss', sx - 140, sy + 60);
+          this.explosions.explode('boss', sx + 130, sy - 80);
+        },
+      });
+      this.endingScript.push({
+        at: 2.1,
+        fn: () => {
+          this.explosions.explode('final', sx + 60, sy - 100);
+          this.explosions.explode('large', sx - 90, sy - 60);
+        },
+      });
+      this.endingScript.push({
+        at: 2.8,
+        fn: () => {
+          this.explosions.explode('final', sx - 40, sy + 90);
+          this.explosions.explode('large', sx + 100, sy + 40);
+          this.rig.addShake(14, 400);
+        },
+      });
+      this.endingScript.push({
+        at: 3.6,
+        fn: () => {
+          this.explosions.explode('final', sx, sy);
+          this.rig.slowMo(0.25, 1500);
+          this.sfx('explosionLarge');
+        },
+      });
       this.endingScript.push({ at: 4.6, fn: () => this.whiteout(0.95) });
       this.endingScript.push({ at: 5.6, fn: () => this.finishEnding(id) });
     } else {
@@ -1269,8 +1442,20 @@ export class WorldScene extends Phaser.Scene implements WorldSceneI {
       for (const i of this.interactables) {
         if (i.intId.startsWith('evac')) i.onInteract();
       }
-      this.endingScript.push({ at: 2.0, fn: () => { this.sfx('memory'); this.rig.slowMo(0.4, 1200); } });
-      this.endingScript.push({ at: 2.6, fn: () => { this.fx.spawnGlow(this.player.x, this.player.y, PAL.teal, 3, 0.6); this.sfx('gateOpen'); } });
+      this.endingScript.push({
+        at: 2.0,
+        fn: () => {
+          this.sfx('memory');
+          this.rig.slowMo(0.4, 1200);
+        },
+      });
+      this.endingScript.push({
+        at: 2.6,
+        fn: () => {
+          this.fx.spawnGlow(this.player.x, this.player.y, PAL.teal, 3, 0.6);
+          this.sfx('gateOpen');
+        },
+      });
       this.endingScript.push({ at: 3.4, fn: () => this.whiteout(0.9) });
       this.endingScript.push({ at: 4.4, fn: () => this.finishEnding(id) });
     }
@@ -1387,6 +1572,7 @@ export class WorldScene extends Phaser.Scene implements WorldSceneI {
 
   saveNow(): void {
     saveSystem.save(this.save);
+    bus.emit('save', undefined);
   }
 }
 

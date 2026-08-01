@@ -6,8 +6,8 @@
  * Input state is mutated from event handlers (never during render).
  */
 
-import { useCallback, useRef, useState } from 'react';
-import { touchInput } from '../systems/InputState';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { queueTouchDash, queueTouchOverdrive, resetTouchInput, touchInput } from '../systems/InputState';
 import { api } from '../bridge';
 
 interface StickState {
@@ -26,10 +26,35 @@ export function TouchControls() {
   const [aimStick, setAimStick] = useState<StickState | null>(null);
   const moveOrigin = useRef<StickState | null>(null);
   const aimOrigin = useRef<StickState | null>(null);
+  const interactPointer = useRef<number | null>(null);
+
+  useEffect(() => {
+    // A viewport/orientation change can cancel browser touches without sending
+    // a PointerEvent to the original element. Clear both sticks so movement or
+    // firing cannot remain latched after rotating the device.
+    const clearForViewportChange = () => {
+      moveOrigin.current = null;
+      aimOrigin.current = null;
+      interactPointer.current = null;
+      resetTouchInput();
+      setMoveStick(null);
+      setAimStick(null);
+    };
+    window.addEventListener('resize', clearForViewportChange);
+    window.addEventListener('orientationchange', clearForViewportChange);
+    return () => {
+      window.removeEventListener('resize', clearForViewportChange);
+      window.removeEventListener('orientationchange', clearForViewportChange);
+      resetTouchInput();
+    };
+  }, []);
 
   // ── movement stick ──
   const handleMoveDown = useCallback((e: React.PointerEvent) => {
     e.preventDefault();
+    e.currentTarget.setPointerCapture(e.pointerId);
+    touchInput.moveX = 0;
+    touchInput.moveY = 0;
     const s = { id: e.pointerId, ox: e.clientX, oy: e.clientY, x: e.clientX, y: e.clientY };
     moveOrigin.current = s;
     setMoveStick(s);
@@ -51,6 +76,7 @@ export function TouchControls() {
 
   const handleMoveUp = useCallback((e: React.PointerEvent) => {
     if (moveOrigin.current?.id !== e.pointerId) return;
+    if (e.currentTarget.hasPointerCapture(e.pointerId)) e.currentTarget.releasePointerCapture(e.pointerId);
     moveOrigin.current = null;
     touchInput.moveX = 0;
     touchInput.moveY = 0;
@@ -60,6 +86,7 @@ export function TouchControls() {
   // ── aim stick ──
   const handleAimDown = useCallback((e: React.PointerEvent) => {
     e.preventDefault();
+    e.currentTarget.setPointerCapture(e.pointerId);
     const s = { id: e.pointerId, ox: e.clientX, oy: e.clientY, x: e.clientX, y: e.clientY };
     aimOrigin.current = s;
     setAimStick(s);
@@ -83,25 +110,35 @@ export function TouchControls() {
 
   const handleAimUp = useCallback((e: React.PointerEvent) => {
     if (aimOrigin.current?.id !== e.pointerId) return;
+    if (e.currentTarget.hasPointerCapture(e.pointerId)) e.currentTarget.releasePointerCapture(e.pointerId);
     aimOrigin.current = null;
     touchInput.aimActive = false;
     touchInput.firing = false;
     setAimStick(null);
   }, []);
 
-  const press = useCallback((fn: () => void) => (e: React.PointerEvent) => {
-    e.preventDefault();
-    fn();
-  }, []);
-
-  const holdInteract = useCallback(
-    (down: boolean) => (e: React.PointerEvent) => {
+  const press = useCallback(
+    (fn: () => void) => (e: React.PointerEvent) => {
       e.preventDefault();
-      touchInput.interactHeld = down;
-      if (down) touchInput.interactQueued = true;
+      fn();
     },
     [],
   );
+
+  const startInteract = useCallback((e: React.PointerEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    e.currentTarget.setPointerCapture(e.pointerId);
+    interactPointer.current = e.pointerId;
+    touchInput.interactHeld = true;
+    touchInput.interactQueued = true;
+  }, []);
+
+  const stopInteract = useCallback((e: React.PointerEvent<HTMLButtonElement>) => {
+    if (interactPointer.current !== e.pointerId) return;
+    if (e.currentTarget.hasPointerCapture(e.pointerId)) e.currentTarget.releasePointerCapture(e.pointerId);
+    interactPointer.current = null;
+    touchInput.interactHeld = false;
+  }, []);
 
   return (
     <div className="touch">
@@ -116,7 +153,10 @@ export function TouchControls() {
         {moveStick && (
           <div className="stick" style={{ left: moveStick.ox, top: moveStick.oy }}>
             <div className="stick__base" />
-            <div className="stick__knob" style={{ transform: `translate(${moveStick.x - moveStick.ox}px, ${moveStick.y - moveStick.oy}px)` }} />
+            <div
+              className="stick__knob"
+              style={{ transform: `translate(${moveStick.x - moveStick.ox}px, ${moveStick.y - moveStick.oy}px)` }}
+            />
           </div>
         )}
         {!moveStick && <span className="touch__zone-label">MOVE</span>}
@@ -141,37 +181,30 @@ export function TouchControls() {
 
       {/* buttons */}
       <div className="touch__buttons">
-        <button
-          type="button"
-          className="touch-btn touch-btn--dash"
-          onPointerDown={press(() => {
-            touchInput.dashQueued = true;
-          })}
-        >
+        <button type="button" className="touch-btn touch-btn--dash" onPointerDown={press(queueTouchDash)}>
           DASH
         </button>
         <button
           type="button"
           className="touch-btn touch-btn--interact"
-          onPointerDown={holdInteract(true)}
-          onPointerUp={holdInteract(false)}
-          onPointerCancel={holdInteract(false)}
+          onPointerDown={startInteract}
+          onPointerUp={stopInteract}
+          onPointerCancel={stopInteract}
         >
           OPEN
         </button>
-        <button
-          type="button"
-          className="touch-btn touch-btn--od"
-          onPointerDown={press(() => {
-            touchInput.overdriveQueued = true;
-          })}
-        >
+        <button type="button" className="touch-btn touch-btn--od" onPointerDown={press(queueTouchOverdrive)}>
           OVERDRIVE
         </button>
-        <button type="button" className="touch-btn touch-btn--pause" onPointerDown={press(() => api.pause())}>
-          ❚❚
-        </button>
       </div>
+      <button
+        type="button"
+        className="touch-btn touch-btn--pause touch-btn--pause-global"
+        aria-label="Pause"
+        onPointerDown={press(() => api.pause())}
+      >
+        &#10074;&#10074;
+      </button>
     </div>
   );
 }

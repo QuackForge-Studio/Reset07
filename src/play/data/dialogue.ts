@@ -21,7 +21,7 @@ export const DIALOGUE: DialogueLineDef[] = [
   // ── Opening (garage, loop 1) ────────────────────────────
   { id: 'open1', speaker: 'CITY SYSTEMS', text: 'UNIT K-07 // BOOT SEQUENCE COMPLETE. EMERGENCY RESPONSE PROTOCOL ACTIVE.' },
   { id: 'open2', speaker: 'MARA', text: 'K-07? Can you hear me? This is Mara — city systems engineering. I don\u2019t know how you\u2019re still online.' },
-  { id: 'open3', speaker: 'MARA', text: 'The core is destabilizing. We have seven minutes before it collapses. Move now — people are trapped in the service quarter.' },
+  { id: 'open3', speaker: 'MARA', text: 'The core is destabilizing. We have seven minutes. Move — people are trapped in the service quarter.' },
   { id: 'open4', speaker: 'MARA', text: 'Security machines have turned hostile. Use your weapon. I\u2019ll guide you.' },
   { id: 'open5', speaker: 'MARA', text: 'The blast opened the gate! Get out — the clock is running.' },
   { id: 'open6', speaker: 'MARA', text: 'Seven minutes. That\u2019s all we have.' },

@@ -33,6 +33,9 @@ export function GameShell() {
   const mountRef = useRef<HTMLDivElement>(null);
   const snap = useSyncExternalStore(subscribeSnapshot, getSnapshot, getSnapshot);
   const [overlay, setOverlay] = useState<Overlay>('title');
+  const [settingsReturn, setSettingsReturn] = useState<Extract<Overlay, 'title' | 'paused'>>('title');
+  const [memoryReturn, setMemoryReturn] = useState<Extract<Overlay, 'garage' | 'paused'>>('garage');
+  const [howToReturn, setHowToReturn] = useState<Extract<Overlay, 'title' | 'paused'>>('title');
   const overlayRef = useRef(overlay);
   const setOv = useCallback((o: Overlay) => {
     overlayRef.current = o;
@@ -90,7 +93,16 @@ export function GameShell() {
 
   const worldScene = useCallback(() => {
     const s = gameRef?.scene.getScene('world');
-    return s as (Phaser.Scene & { resumeGame: () => void; restartLoop: () => void; quitToTitle: () => void; chooseDialogue: (c: 'a' | 'b') => void; chooseEnding: (e: string) => void }) | undefined;
+    return s as
+      | (Phaser.Scene & {
+          pauseGame: () => void;
+          resumeGame: () => void;
+          restartLoop: () => void;
+          quitToTitle: () => void;
+          chooseDialogue: (c: 'a' | 'b') => void;
+          chooseEnding: (e: string) => void;
+        })
+      | undefined;
   }, []);
 
   // ── api wiring ──
@@ -108,7 +120,7 @@ export function GameShell() {
         else game.scene.start('world');
         setOv('none');
       },
-      pause: () => setOv('paused'),
+      pause: () => worldScene()?.pauseGame(),
       resume: () => {
         worldScene()?.resumeGame();
         setOv('none');
@@ -158,6 +170,7 @@ export function GameShell() {
       }),
       bus.on('ending-decision', (p) => setEndingDecision(p.available)),
       bus.on('ending', (p) => setEnded(p)),
+      bus.on('save', () => setSave(saveSystem.load().data)),
       bus.on('loopEnd', (p) => {
         setLoopEndData(p);
         setOv('garage');
@@ -210,14 +223,31 @@ export function GameShell() {
 
       {/* screens */}
       {overlay === 'title' && (
-        <TitleScreen canContinue={canContinue} onNew={startNew} onContinue={startNew} onSettings={() => setOv('settings')} onHowTo={() => setOv('howto')} onCredits={() => setOv('credits')} hasSave={hasSave} />
+        <TitleScreen
+          canContinue={canContinue}
+          onNew={startNew}
+          onContinue={startNew}
+          onSettings={() => {
+            setSettingsReturn('title');
+            setOv('settings');
+          }}
+          onHowTo={() => {
+            setHowToReturn('title');
+            setOv('howto');
+          }}
+          onCredits={() => setOv('credits')}
+          hasSave={hasSave}
+        />
       )}
       {overlay === 'garage' && loopEndData && (
         <GarageScreen
           summary={loopEndData}
           save={save}
           onStart={startNew}
-          onMemory={() => setOv('memory')}
+          onMemory={() => {
+            setMemoryReturn('garage');
+            setOv('memory');
+          }}
           onTitle={quitToTitle}
           onEquip={(ids) => api.equipModules(ids)}
         />
@@ -229,14 +259,34 @@ export function GameShell() {
           onResume={() => api.resume()}
           onRestart={() => api.restartLoop()}
           onTitle={quitToTitle}
-          onSettings={() => setOv('settings')}
-          onMemory={() => setOv('memory')}
-          onHowTo={() => setOv('howto')}
+          onSettings={() => {
+            setSettingsReturn('paused');
+            setOv('settings');
+          }}
+          onMemory={() => {
+            setMemoryReturn('paused');
+            setOv('memory');
+          }}
+          onHowTo={() => {
+            setHowToReturn('paused');
+            setOv('howto');
+          }}
         />
       )}
-      {overlay === 'settings' && <SettingsPanel save={save} onApply={applySettings} onBack={() => setOv(overlayRef.current === 'settings' ? 'title' : 'title')} onReset={() => { saveSystem.clear(); setSave(saveSystem.load().data); setOv('title'); }} />}
-      {overlay === 'memory' && <MemoryBoard save={save} onClose={() => setOv(overlayRef.current === 'paused' ? 'paused' : 'garage')} />}
-      {overlay === 'howto' && <HowToPlay onClose={() => setOv('paused')} inputMode={snap.inputMode} />}
+      {overlay === 'settings' && (
+        <SettingsPanel
+          save={save}
+          onApply={applySettings}
+          onBack={() => setOv(settingsReturn)}
+          onReset={() => {
+            saveSystem.clear();
+            setSave(saveSystem.load().data);
+            setOv('title');
+          }}
+        />
+      )}
+      {overlay === 'memory' && <MemoryBoard save={save} onClose={() => setOv(memoryReturn)} />}
+      {overlay === 'howto' && <HowToPlay onClose={() => setOv(howToReturn)} inputMode={snap.inputMode} />}
       {overlay === 'credits' && <CreditsScreen onClose={() => setOv('title')} />}
 
       {/* boss decision + ending */}

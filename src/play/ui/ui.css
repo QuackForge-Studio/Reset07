@@ -705,6 +705,7 @@ html[data-motion='reduced'] .panel { animation: none; }
   border-radius: 8px;
 }
 
+
 /* ── Pause / settings / memory board / garage / endings ── */
 
 .pause__title { margin: 0; }

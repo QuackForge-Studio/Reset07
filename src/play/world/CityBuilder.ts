@@ -188,7 +188,7 @@ function buildProps(scene: WorldScene): Array<{ x: number; y: number; kind: stri
     const district = districtOf(p.tile);
     switch (p.kind) {
       case 'vehicle': {
-        const isTutorial = p.tile[0] === 16 && p.tile[1] === 93;
+        const isTutorial = p.tile[0] === 17 && p.tile[1] === 84;
         const v = new Vehicle(scene, x, y, p.variant ?? 'car', {
           onDestroyed: () => {
             if (isTutorial) scene.onTutorialVehicleDestroyed();

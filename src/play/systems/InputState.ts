@@ -37,6 +37,27 @@ export const touchInput = {
   overdriveQueued: false,
 };
 
+/** Clear transient touch state when gameplay is paused, restarted, or unmounted. */
+export function resetTouchInput(): void {
+  touchInput.moveX = 0;
+  touchInput.moveY = 0;
+  touchInput.aimActive = false;
+  touchInput.aimAngle = 0;
+  touchInput.firing = false;
+  touchInput.dashQueued = false;
+  touchInput.interactQueued = false;
+  touchInput.interactHeld = false;
+  touchInput.overdriveQueued = false;
+}
+
+export function queueTouchDash(): void {
+  touchInput.dashQueued = true;
+}
+
+export function queueTouchOverdrive(): void {
+  touchInput.overdriveQueued = true;
+}
+
 export class InputManager {
   private scene: Phaser.Scene & { playerPos?: { x: number; y: number } };
   private keys!: Record<string, Phaser.Input.Keyboard.Key>;
@@ -49,6 +70,7 @@ export class InputManager {
 
   constructor(scene: Phaser.Scene) {
     this.scene = scene as typeof this.scene;
+    resetTouchInput();
     const kb = scene.input.keyboard;
     if (kb) {
       this.keys = kb.addKeys('W,A,S,D,UP,DOWN,LEFT,RIGHT,SPACE,E,Q,ESC,SHIFT', true) as Record<string, Phaser.Input.Keyboard.Key>;
@@ -101,6 +123,10 @@ export class InputManager {
         mx = lx;
         my = ly;
       }
+    }
+    if (this.inputMode === 'touch') {
+      mx = touchInput.moveX;
+      my = touchInput.moveY;
     }
 
     // aim: mouse

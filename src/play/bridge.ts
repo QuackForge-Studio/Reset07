@@ -65,6 +65,7 @@ type BusEventMap = {
   inputMode: 'kb' | 'touch';
   ending: { id: 'preserve' | 'break' | 'release' };
   'ending-decision': { available: { preserve: boolean; break: boolean; release: boolean } };
+  save: undefined;
   consoleWarn: string;
 };
 

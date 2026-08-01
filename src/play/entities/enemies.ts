@@ -195,10 +195,16 @@ export class PatrolDrone extends EnemyBase {
   private telegraphing = 0;
   private strafePhase = Math.random() * 6;
   private playerRef: { x: number; y: number };
+  private training: boolean;
+  private anchorX: number;
+  private anchorY: number;
 
-  constructor(scene: Phaser.Scene, x: number, y: number, player: { x: number; y: number }, hooks: EnemyHooks) {
+  constructor(scene: Phaser.Scene, x: number, y: number, player: { x: number; y: number }, hooks: EnemyHooks, training = false) {
     super(scene, x, y, 'drone', 'enemy-drone', hooks);
     this.playerRef = player;
+    this.training = training;
+    this.anchorX = x;
+    this.anchorY = y;
   }
 
   update(dt: number): void {
@@ -207,16 +213,26 @@ export class PatrolDrone extends EnemyBase {
     const dx = p.x - this.x;
     const dy = p.y - this.y;
     const dist = Math.hypot(dx, dy);
-    const desired = dist > 330 ? 330 : dist < 210 ? 210 : dist;
-    const toPlayer = { x: dx / (dist || 1), y: dy / (dist || 1) };
-    this.strafePhase += dt * 1.6;
-    const strafe = { x: -toPlayer.y, y: toPlayer.x };
-    const wantX = p.x - toPlayer.x * desired;
-    const wantY = p.y - toPlayer.y * desired;
-    const move = this.steerTo(wantX, wantY, dt);
-    const sx = move.x * 0.55 + strafe.x * this.speed * 0.5 * Math.sin(this.strafePhase);
-    const sy = move.y * 0.55 + strafe.y * this.speed * 0.5 * Math.sin(this.strafePhase);
-    this.applyMove(sx, sy, dt);
+    if (this.training) {
+      // tutorial drones hover at their anchor (gentle bob) and turn to face the player
+      this.strafePhase += dt * 2;
+      const bob = Math.sin(this.strafePhase) * 14;
+      const move = this.steerTo(this.anchorX, this.anchorY + bob, dt);
+      this.applyMove(move.x * 0.75, move.y * 0.75, dt);
+    } else {
+      const lo = 210;
+      const hi = 330;
+      const desired = dist > hi ? hi : dist < lo ? lo : dist;
+      const toPlayer = { x: dx / (dist || 1), y: dy / (dist || 1) };
+      this.strafePhase += dt * 1.6;
+      const strafe = { x: -toPlayer.y, y: toPlayer.x };
+      const wantX = p.x - toPlayer.x * desired;
+      const wantY = p.y - toPlayer.y * desired;
+      const move = this.steerTo(wantX, wantY, dt);
+      const sx = move.x * 0.55 + strafe.x * this.speed * 0.5 * Math.sin(this.strafePhase);
+      const sy = move.y * 0.55 + strafe.y * this.speed * 0.5 * Math.sin(this.strafePhase);
+      this.applyMove(sx, sy, dt);
+    }
 
     // attack cycle
     this.burstTimer -= dt;
@@ -235,7 +251,7 @@ export class PatrolDrone extends EnemyBase {
         this.fireBolt(Math.atan2(dy, dx));
       }
     } else if (this.burstTimer <= 0 && dist < 420 && dist > 60) {
-      this.burstTimer = 1.9 + Math.random() * 0.8;
+      this.burstTimer = (this.training ? 3.2 : 1.9) + Math.random() * 0.8;
       this.telegraphing = 0.38;
       this.sceneW.sfx('beep');
     } else if (this.burstTimer <= 0) {
@@ -247,14 +263,14 @@ export class PatrolDrone extends EnemyBase {
   private fireBolt(angle: number): void {
     const scene = this.sceneW;
     const b = scene.physics.add.sprite(this.x + Math.cos(angle) * 18, this.y + Math.sin(angle) * 18, 'bullet-enemy');
+    scene.enemyBolts.add(b); // add BEFORE setting velocity (group add resets the body)
     b.setRotation(angle);
     b.setDepth(70);
     const body = b.body as Phaser.Physics.Arcade.Body;
-    body.setVelocity(Math.cos(angle) * 330, Math.sin(angle) * 330);
     body.setCircle(4, 4, 2);
+    body.setVelocity(Math.cos(angle) * 330, Math.sin(angle) * 330);
     b.setData('dmg', 8);
     b.setData('life', 2.2);
-    scene.enemyBolts.add(b);
   }
 }
 
@@ -521,10 +537,11 @@ export function createEnemy(
   y: number,
   player: { x: number; y: number },
   hooks: EnemyHooks,
+  training = false,
 ): EnemyBase {
   switch (kind) {
     case 'drone':
-      return new PatrolDrone(scene, x, y, player, hooks);
+      return new PatrolDrone(scene, x, y, player, hooks, training);
     case 'hunter':
       return new Hunter(scene, x, y, player, hooks);
     case 'shield':
