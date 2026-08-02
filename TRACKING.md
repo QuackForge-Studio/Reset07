@@ -4,6 +4,8 @@ Durable task log. Updated whenever a chunk of work lands. One line per item, new
 
 ## In progress
 
+- [x] Playtest round 3: visible city-wall band at all four map rims (perimeter colliders moved inside the map; glowing inner edge); transit-sector platform blocks punched with lit cross-passages so the 4 parallel lanes connect (cyan-bordered doorway markers); patrol drones now rotate to face their shot while telegraphing/bursting. Live deployed 570e90b.
+
 - [x] Playtest round 2: open gates showed a black void band instead of the road (DOOR tiles had no ground texture — new `t-door` tile maps T.DOOR); explosion flash was a screen-wide whiteout (scale fireball/30 @ alpha 1 ADD) — now scales to blast radius with capped alpha; verified localized 25-30% screen. Live deployed 15f3021.
 
 - [x] QA batch from playtest: world perimeter walls + void underlay (player could walk out of the map / flickering void), effect-layer depths (explosions rendered UNDER the floor — EffectManager pools + explosion layers had no setDepth), dash afterimages now fade+destroy (trail lingered), bullet wall impacts (flash+ring+sparks, colored per bolt), HEAT bar added to HUD (plus dead-code overheat reset fixed), memory crystals no longer re-spawn when already owned (RECOVER MEMORY prompt silently did nothing), MemoryBoard ring layout rebuilt (cards overlapped; 0 overlap now), parked cars moved off the garage gate exit, drone telegraph redrawn as dashed pulsing beam.
