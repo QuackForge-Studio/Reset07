@@ -27,10 +27,15 @@ Project memory for coding agents. Loaded automatically at the start of every ses
 | `npm run test:soak`          | `test:smoke` plus one real-time seven-minute loop/reset check (slow)                                     |
 | `npm run verify`             | typecheck + lint + unit + game smoke + normal build                                                      |
 | `npm run generate:icons`     | Regenerate PNG favicon set, maskable icon, favicon.ico/svg (`scripts/generate-icons.mjs`, needs `sharp`) |
-| `npm run smoke`              | Playwright smoke test (desktop 1500px + mobile 390px) against `localhost:5199`                           |
-| `npm run smoke:narrow`       | 320px horizontal-overflow check against `localhost:5199`                                                 |
+| `npm run smoke`              | Playwright smoke test (desktop 1500px + mobile 390px) against `localhost:5199`                           || `npm run smoke:narrow`       | 320px horizontal-overflow check against `localhost:5199`                                                 |
 
 Playwright uses system Chrome at `C:/Program Files/Google/Chrome/Application/chrome.exe` (no bundled browser).
+
+## Deploy (game live at `https://app.quackforge.io.vn/reset07/play`)
+
+- Cloudflare Pages watches **`QuackForge-Studio/quackforge-app`** (main), NOT this repo. Its build (`scripts/build.mjs`) shallow-clones Reset07 and builds it into `dist/reset07/` — so a push here never deploys on its own.
+- To publish game changes: push Reset07, then trigger a `quackforge-app` rebuild — any push/empty commit to its main, or "Retry deployment" in the CF Pages dashboard. Verify the live bundle hash matches a fresh `npm run build` output.
+- The game's PWA service worker is network-first for navigations; a plain refresh picks up new builds.
 
 ## Structure
 

@@ -4,6 +4,7 @@ Durable task log. Updated whenever a chunk of work lands. One line per item, new
 
 ## In progress
 
+- [x] Deploy trigger for the fix batch: pushed empty commit `cb72f72` to `quackforge-app` main → CF Pages rebuilt → live `app.quackforge.io.vn/reset07/play` now serves `index-BpM3nrT3.js` (verified). Deploy flow documented in AGENTS.md (game deploys need a quackforge-app rebuild — pushing Reset07 alone doesn't deploy).
 - [x] Boss-hit freeze + enemy-fire fix and procedural art pass: `enemyBoltHitPlayer` arg order (`overlap(group, sprite)` passes the lone sprite first), dead nested `telegraphing > 0` branches in PatrolDrone/ShieldUnit (burstLeft/slam never fired), and silhouette-first redraw of all entity/vehicle/prop textures in `texgen.ts` (same canvas sizes, brand palette only). Verified live + `test:smoke` + `verify`.
 - [x] Deployed to Cloudflare Pages: game live at `https://app.quackforge.io.vn/reset07/play` (subpath-aware router, Pages Function SPA fallback, cache-busted SW); QuackForge site CTA updated to "Chơi ngay" (spec: `docs/superpowers/specs/2026-08-01-deploy-reset07-cloudflare-pages.md`).
 
