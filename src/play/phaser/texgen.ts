@@ -139,6 +139,17 @@ export function generateAllTextures(scene: Phaser.Scene): void {
     g.fillRect(1, 1, TILE - 2, 2);
     g.fillRect(1, TILE - 3, TILE - 2, 2);
   });
+  // bright doorway marker over transit cross-passages
+  mk(s, 't-passage', TILE, TILE, (g) => {
+    g.fillStyle(PAL.surface, 1);
+    g.fillRect(0, 0, TILE, TILE);
+    g.lineStyle(2, PAL.cyan, 0.85);
+    g.strokeRect(1, 1, TILE - 2, TILE - 2);
+    g.fillStyle(PAL.cyan, 0.22);
+    g.fillRect(4, 4, TILE - 8, TILE - 8);
+    g.fillStyle(PAL.cyan, 0.55);
+    g.fillRect(TILE / 2 - 1, 7, 2, TILE - 14);
+  });
   mk(s, 't-arena', TILE, TILE, (g) => {
     g.fillStyle(PAL.navy, 1);
     g.fillRect(0, 0, TILE, TILE);

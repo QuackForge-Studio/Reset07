@@ -6,7 +6,7 @@
 
 import Phaser from 'phaser';
 import { PAL } from '../palette';
-import { CityGrid, PROPS, GATES, T, TILE, WORLD_W, WORLD_H, type Rect, type GateDef } from './cityData';
+import { CityGrid, PROPS, GATES, T, TILE, WORLD_W, WORLD_H, TRANSIT_PASSAGES, type Rect, type GateDef } from './cityData';
 import type { WorldScene } from '../types';
 import { Pathfinder } from '../systems/Pathfinder';
 import { Vehicle, FuelTank, GasPipe, Transformer, Puddle, RescueCapsule, EvacCapsule, MemoryCrystal, Relay, Uplink, Gate, Tram, DecorativeProp } from '../entities/environment';
@@ -37,6 +37,7 @@ export function buildCity(scene: WorldScene): BuiltWorld {
   const gates = buildGates(scene, grid);
   const spawnPoints = buildProps(scene);
   bakeColliders(scene, grid);
+  drawPerimeter(scene);
   decorateAmbient(scene);
   return { grid, gates, spawnPoints, propCount: PROPS.length };
 }
@@ -72,6 +73,12 @@ function drawGround(scene: WorldScene, grid: CityGrid): void {
       runStart = tex ? x : -1;
       runTex = tex ?? '';
     }
+  }
+  // bright markers over the transit cross-passages so the links are readable
+  for (const [x, y1, y2] of TRANSIT_PASSAGES) {
+    scene.add.image(x * TILE + TILE / 2, ((y1 + y2) / 2) * TILE + TILE / 2, 't-passage')
+      .setDisplaySize(TILE, (y2 - y1 + 1) * TILE)
+      .setDepth(1.5);
   }
   // hazard strips around the core
   const hazard = (x1: number, x2: number, y: number) => {
@@ -166,13 +173,36 @@ function bakeColliders(scene: WorldScene, grid: CityGrid): void {
   }
   // world perimeter — keep entities (and the player) inside the map; the
   // tile grid is VOID outside the districts so nothing else blocks there.
-  const BAND = 128; // band thickness in px
+  // Bands sit INSIDE the map edges (0..192px) so the player can never reach
+  // the rim and look out into the void; drawPerimeter() paints the visible wall.
+  const BAND = 192;
   const band = (cx: number, cy: number, w: number, h: number) => group.add(scene.add.zone(cx, cy, w, h));
-  band(WORLD_W / 2, -BAND / 2, WORLD_W + BAND * 2, BAND); // top
-  band(WORLD_W / 2, WORLD_H + BAND / 2, WORLD_W + BAND * 2, BAND); // bottom
-  band(-BAND / 2, WORLD_H / 2, BAND, WORLD_H); // left
-  band(WORLD_W + BAND / 2, WORLD_H / 2, BAND, WORLD_H); // right
+  band(BAND / 2, BAND / 2, WORLD_W, BAND); // top
+  band(BAND / 2, WORLD_H - BAND / 2, WORLD_W, BAND); // bottom
+  band(BAND / 2, WORLD_H / 2, BAND, WORLD_H); // left
+  band(WORLD_W - BAND / 2, WORLD_H / 2, BAND, WORLD_H); // right
   scene.collideWalls = group;
+}
+
+/** Visible city-wall band around the whole map — hides the void at the rim. */
+function drawPerimeter(scene: WorldScene): void {
+  const tex = makeWallTexture(scene);
+  const strip = (cx: number, cy: number, w: number, h: number) => {
+    const img = scene.add.tileSprite(cx, cy, w, h, tex);
+    img.setDepth(12);
+    return img;
+  };
+  strip(WORLD_W / 2, 96, WORLD_W, 192);
+  strip(WORLD_W / 2, WORLD_H - 96, WORLD_W, 192);
+  strip(96, WORLD_H / 2, 192, WORLD_H);
+  strip(WORLD_W - 96, WORLD_H / 2, 192, WORLD_H);
+  // glowing inner edge so the boundary reads as a wall, not scenery
+  const g = scene.add.graphics().setDepth(13);
+  g.lineStyle(2, PAL.cyan, 0.4);
+  g.lineBetween(192, 0, 192, WORLD_H);
+  g.lineBetween(WORLD_W - 192, 0, WORLD_W - 192, WORLD_H);
+  g.lineBetween(0, 192, WORLD_W, 192);
+  g.lineBetween(0, WORLD_H - 192, WORLD_W, WORLD_H - 192);
 }
 
 function buildGates(scene: WorldScene, _grid: CityGrid): GateInstance[] {

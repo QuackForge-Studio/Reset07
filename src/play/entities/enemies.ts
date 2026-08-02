@@ -238,8 +238,12 @@ export class PatrolDrone extends EnemyBase {
     this.burstTimer -= dt;
     const wasTelegraphing = this.telegraphing > 0;
     this.telegraphing -= dt;
+    const aim = Math.atan2(dy, dx);
     if (this.telegraphing > 0) {
-      this.telegraph.show(this.x, this.y, Math.atan2(dy, dx), dist, PAL.danger, 0.45);
+      // face the shot while telegraphing so the muzzle matches the beam
+      this.facing = aim;
+      this.setRotation(aim);
+      this.telegraph.show(this.x, this.y, aim, dist, PAL.danger, 0.45);
     } else if (wasTelegraphing) {
       this.telegraph.hide();
       this.burstLeft = 3;
@@ -249,8 +253,10 @@ export class PatrolDrone extends EnemyBase {
       if (this.burstDelay <= 0) {
         this.burstLeft--;
         this.burstDelay = 0.13;
-        this.fireBolt(Math.atan2(dy, dx));
+        this.fireBolt(aim);
       }
+      this.facing = aim;
+      this.setRotation(aim);
     } else if (this.burstTimer <= 0 && dist < 420 && dist > 60) {
       this.burstTimer = (this.training ? 3.2 : 1.9) + Math.random() * 0.8;
       this.telegraphing = 0.38;

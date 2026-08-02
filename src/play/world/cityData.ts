@@ -17,6 +17,16 @@ export const TILE = 32;
 export const WORLD_W = W * TILE;
 export const WORLD_H = H * TILE;
 
+/** Vertical links punched through the transit platform blocks. */
+export const TRANSIT_PASSAGES: ReadonlyArray<readonly [x: number, y1: number, y2: number]> = [
+  [74, 23, 25],
+  [100, 23, 25],
+  [120, 23, 25],
+  [74, 37, 41],
+  [100, 37, 41],
+  [120, 37, 41],
+];
+
 /** Tile codes */
 export const T = {
   VOID: 0,
@@ -218,6 +228,11 @@ export class CityGrid {
       { x1: 131, y1: 91, x2: 135, y2: 96 },
     ];
     for (const b of buildings) g.fillRect(b, T.BUILDING);
+
+    // Transit cross-passages — punch vertical links through the platform
+    // blocks so the corridor strips read as one building (enter any lane,
+    // climb/drop through the interior) instead of dead-end parallel lanes
+    for (const [x, y1, y2] of TRANSIT_PASSAGES) g.fillRect({ x1: x, y1, x2: x, y2 }, T.SIDEWALK);
 
     // Substation plaza (power grid center) — open ground with transformers
     g.fillRect({ x1: 90, y1: 91, x2: 110, y2: 96 }, T.PLAZA);
