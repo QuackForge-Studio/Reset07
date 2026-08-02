@@ -10,6 +10,13 @@ Project memory for coding agents. Loaded automatically at the start of every ses
 - **Game**: `/play` — RESET//07 the game (Phaser 3 + React shell). Stack: TypeScript + Vite. Game code lives in `src/play/` (pure logic in `systems/`+`data/`, Phaser in `scenes/`+`entities/`+`world/`, UI in `ui/`).
 - **Progress log**: `TRACKING.md` at repo root — the durable task log. Update it (one line per item, newest on top) whenever a chunk of work lands or is in progress. Keep AGENTS.md itself terse; point here instead.
 
+## Subagents (project-scoped, `.pi/agents/`)
+
+- `r07-bugfixer` (alias `bugfixer`) — Phaser gameplay bugs; ships with the durable gotchas below.
+- `r07-art-reviewer` (alias `artfix`) — texgen/palette/depth/VFX; never changes texture canvas sizes.
+- `r07-city-architect` (alias `cityfix`) — cityData/CityBuilder/pathfinding/layout questions.
+- `r07-qa-verifier` (alias `qa`) — read-only; runs typecheck/lint/vitest/smoke/build and reports evidence.
+
 ## Commands
 
 | Command                      | Purpose                                                                                                  |

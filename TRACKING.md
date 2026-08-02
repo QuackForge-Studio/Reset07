@@ -4,6 +4,8 @@ Durable task log. Updated whenever a chunk of work lands. One line per item, new
 
 ## In progress
 
+- [x] Project-scoped subagents created in `.pi/agents/`: r07-bugfixer, r07-art-reviewer, r07-city-architect, r07-qa-verifier (all fresh-context, read AGENTS.md; sanity-tested via r07-bugfixer structure dump).
+
 - [x] Playtest round 3: visible city-wall band at all four map rims (perimeter colliders moved inside the map; glowing inner edge); transit-sector platform blocks punched with lit cross-passages so the 4 parallel lanes connect (cyan-bordered doorway markers); patrol drones now rotate to face their shot while telegraphing/bursting. Live deployed 570e90b.
 
 - [x] Playtest round 2: open gates showed a black void band instead of the road (DOOR tiles had no ground texture — new `t-door` tile maps T.DOOR); explosion flash was a screen-wide whiteout (scale fireball/30 @ alpha 1 ADD) — now scales to blast radius with capped alpha; verified localized 25-30% screen. Live deployed 15f3021.
