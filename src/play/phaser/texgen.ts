@@ -127,6 +127,18 @@ export function generateAllTextures(scene: Phaser.Scene): void {
     g.fillStyle(PAL.cyan, 0.18);
     g.fillRect(1, 1, TILE - 2, 2);
   });
+  // ground shown under an OPEN gate — lit passage, blends garage/road look
+  mk(s, 't-door', TILE, TILE, (g) => {
+    g.fillStyle(PAL.road, 1);
+    g.fillRect(0, 0, TILE, TILE);
+    g.lineStyle(1, PAL.roadLine, 0.5);
+    g.strokeRect(1.5, 1.5, TILE - 3, TILE - 3);
+    g.lineStyle(1, PAL.roadLine, 0.35);
+    g.lineBetween(0, TILE / 2, TILE, TILE / 2);
+    g.fillStyle(PAL.cyan, 0.16);
+    g.fillRect(1, 1, TILE - 2, 2);
+    g.fillRect(1, TILE - 3, TILE - 2, 2);
+  });
   mk(s, 't-arena', TILE, TILE, (g) => {
     g.fillStyle(PAL.navy, 1);
     g.fillRect(0, 0, TILE, TILE);

@@ -50,6 +50,7 @@ function textureFor(t: number): string | null {
     case T.PLAZA: return 't-plaza';
     case T.GARAGE: return 't-garage';
     case T.ARENA: return 't-arena';
+    case T.DOOR: return 't-door';
     default: return null;
   }
 }

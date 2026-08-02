@@ -135,14 +135,15 @@ export class ExplosionSystem {
     const quality = fx.quality;
     const q = quality === 'high' ? 1 : quality === 'med' ? 0.6 : 0.3;
 
-    // 1. one-frame white flash
+    // 1. one-frame white flash — keep it local to the blast, not a screen
+    //    whiteout: scale ≈ radius, alpha capped well below 1
     if (p.flash > 0) {
       const f = scene.add.image(x, y, 'fx-flash');
       f.setBlendMode(Phaser.BlendModes.ADD);
       f.setDepth(78);
-      f.setScale(p.fireball / 30);
-      f.setAlpha(Math.min(1, p.flash * (quality === 'low' ? 0.5 : 1)));
-      scene.tweens.add({ targets: f, alpha: 0, scale: p.fireball / 30 * 1.5, duration: 120, onComplete: () => f.destroy() });
+      f.setScale(p.radius / 96);
+      f.setAlpha(Math.min(0.65, p.flash * 0.6));
+      scene.tweens.add({ targets: f, alpha: 0, scale: (p.radius / 96) * 1.35, duration: 120, onComplete: () => f.destroy() });
     }
     // 2. central fireball
     const fb = scene.add.image(x, y, 'fx-glow-big');
@@ -163,7 +164,8 @@ export class ExplosionSystem {
     core.setBlendMode(Phaser.BlendModes.ADD);
     core.setDepth(76);
     core.setTint(PAL.white);
-    core.setScale(p.fireball / 40);
+    core.setScale(p.fireball / 64);
+    core.setAlpha(0.85);
     scene.tweens.add({ targets: core, alpha: 0, duration: 260, onComplete: () => core.destroy() });
     // 3. secondary fire blobs
     const nBlobs = Math.round(p.fireballs * q);
@@ -193,7 +195,7 @@ export class ExplosionSystem {
     ring.setScale(0.2);
     scene.tweens.add({
       targets: ring,
-      scale: p.radius / 26,
+      scale: p.radius / 34,
       alpha: 0,
       duration: 380,
       ease: 'Cubic.easeOut',
