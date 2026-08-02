@@ -4,6 +4,7 @@ Durable task log. Updated whenever a chunk of work lands. One line per item, new
 
 ## In progress
 
+- [x] Boss-hit freeze + enemy-fire fix and procedural art pass: `enemyBoltHitPlayer` arg order (`overlap(group, sprite)` passes the lone sprite first), dead nested `telegraphing > 0` branches in PatrolDrone/ShieldUnit (burstLeft/slam never fired), and silhouette-first redraw of all entity/vehicle/prop textures in `texgen.ts` (same canvas sizes, brand palette only). Verified live + `test:smoke` + `verify`.
 - [x] Deployed to Cloudflare Pages: game live at `https://app.quackforge.io.vn/reset07/play` (subpath-aware router, Pages Function SPA fallback, cache-busted SW); QuackForge site CTA updated to "Chơi ngay" (spec: `docs/superpowers/specs/2026-08-01-deploy-reset07-cloudflare-pages.md`).
 
 - [x] Independent release audit: repaired closed-gate collision, true pause lifecycle, mobile input, boss/ending integration, and delivered durable production-like smoke coverage plus audit report.

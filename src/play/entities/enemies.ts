@@ -236,13 +236,14 @@ export class PatrolDrone extends EnemyBase {
 
     // attack cycle
     this.burstTimer -= dt;
+    const wasTelegraphing = this.telegraphing > 0;
     this.telegraphing -= dt;
     if (this.telegraphing > 0) {
       this.telegraph.show(this.x, this.y, Math.atan2(dy, dx), dist, PAL.danger, 0.45);
-      if (this.telegraphing <= 0) {
-        this.burstLeft = 3;
-        this.burstDelay = 0;
-      }
+    } else if (wasTelegraphing) {
+      this.telegraph.hide();
+      this.burstLeft = 3;
+      this.burstDelay = 0;
     } else if (this.burstLeft > 0) {
       this.burstDelay -= dt;
       if (this.burstDelay <= 0) {
@@ -407,24 +408,24 @@ export class ShieldUnit extends EnemyBase {
 
     // slam cycle
     this.slamTimer -= dt;
+    const wasSlamTelegraphing = this.slamTelegraph > 0;
     this.slamTelegraph -= dt;
     if (this.slamTelegraph > 0) {
       this.telegraph.showCircle(this.x, this.y, 44, PAL.amber);
-      if (this.slamTelegraph <= 0) {
-        // slam: 140° arc in front
-        const inArc = Math.abs(Phaser.Math.Angle.Wrap(Math.atan2(dy, dx) - this.facing)) < 1.2;
-        if (dist < 64 && inArc) {
-          this.enemyHooks.onPlayerHit?.(this.touchDamage + 6);
-          this.sceneW.rig.addShake(4);
-        }
-        const fx = this.sceneW.fx;
-        for (let i = 0; i < 8; i++) {
-          const a = this.facing + (Math.random() - 0.5) * 1.6;
-          fx.spawnSpark(this.x + Math.cos(a) * 30, this.y + Math.sin(a) * 30, PAL.amber, Math.cos(a) * 160, Math.sin(a) * 160, 0.25, 1);
-        }
-        this.sceneW.sfx('thud');
-        this.telegraph.hide();
+    } else if (wasSlamTelegraphing) {
+      // slam: 140° arc in front
+      const inArc = Math.abs(Phaser.Math.Angle.Wrap(Math.atan2(dy, dx) - this.facing)) < 1.2;
+      if (dist < 64 && inArc) {
+        this.enemyHooks.onPlayerHit?.(this.touchDamage + 6);
+        this.sceneW.rig.addShake(4);
       }
+      const fx = this.sceneW.fx;
+      for (let i = 0; i < 8; i++) {
+        const a = this.facing + (Math.random() - 0.5) * 1.6;
+        fx.spawnSpark(this.x + Math.cos(a) * 30, this.y + Math.sin(a) * 30, PAL.amber, Math.cos(a) * 160, Math.sin(a) * 160, 0.25, 1);
+      }
+      this.sceneW.sfx('thud');
+      this.telegraph.hide();
     } else if (this.slamTimer <= 0 && dist < 190) {
       this.slamTimer = 2.6 + Math.random() * 1;
       this.slamTelegraph = 0.55;

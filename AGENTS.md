@@ -65,6 +65,8 @@ Playwright uses system Chrome at `C:/Program Files/Google/Chrome/Application/chr
 - **Gate colliders**: closed Gate sprites must remain immovable and retain player/enemy colliders; destroy those colliders when the gate opens.
 - **Touch controls**: reset `touchInput` on pause, unmount, resize, and orientation change. Keep the pause button outside the bottom control grid so it cannot overlap OPEN.
 - **E2E hook**: `window.__r07` is available only in DEV or `VITE_E2E=true`; normal production builds must not expose it.
+- **Phaser overlap arg order**: `physics.add.overlap(group, sprite, cb)` passes the callback `(loneSprite, groupMember)` — NOT `(groupMember, loneSprite)`. The player-vs-bolt overlap broke exactly this way (player got destroyed instead of the bolt).
+- **Texture canvas sizes are load-bearing**: entity physics bodies are `setCircle(r, offsetX, offsetY)` offsets relative to the texture frame, so `texgen.ts` canvas sizes must never change — redraw inside, keep the size.
 
 ## Brand rules (non-negotiable)
 

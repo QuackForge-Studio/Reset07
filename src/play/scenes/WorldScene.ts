@@ -218,7 +218,7 @@ export class WorldScene extends Phaser.Scene implements WorldSceneI {
     this.physics.add.overlap(this.playerBolts, this.enemyGroup, (bolt, enemy) =>
       this.boltHitEnemy(bolt as Phaser.GameObjects.Sprite, enemy as DamageableSprite),
     );
-    this.physics.add.overlap(this.enemyBolts, this.player, (bolt) => this.enemyBoltHitPlayer(bolt as Phaser.GameObjects.Sprite));
+    this.physics.add.overlap(this.enemyBolts, this.player, (_player, bolt) => this.enemyBoltHitPlayer(bolt as Phaser.GameObjects.Sprite));
     // bullets damage explosives: player bolts (the core chain mechanic) + enemy bolts (drones can set off chains)
     this.physics.add.overlap(this.playerBolts, this.explosiveGroup, (bolt, prop) => {
       const b = bolt as Phaser.GameObjects.Sprite;
