@@ -570,7 +570,15 @@ async function openEndingDecision(page, errors, verifyProjectile) {
       scene.player.body.reset(scene.player.x, scene.player.y);
       scene.playerPos = { x: scene.player.x, y: scene.player.y };
       scene.player.invulnUntil = performance.now() + 5_000;
-      scene.boss.shieldAngle = 0;
+      // Freeze the boss and drop to phase 3 (shield retracted, core exposed)
+      // so its drift/rotation can't randomly absorb the bolts — this check is
+      // about projectile→boss damage, not boss movement or shield timing.
+      const boss = scene.boss;
+      boss.shieldAngle = 0;
+      boss.phase = 3;
+      boss.body.setVelocity(0, 0);
+      boss.body.setImmovable(true);
+      boss.update = () => {};
     });
     const before = await page.evaluate(() => window.__r07.scene.boss.hp);
     const point = await page.evaluate(() => window.__r07.worldToScreen(window.__r07.scene.boss.x, window.__r07.scene.boss.y));

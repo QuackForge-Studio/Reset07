@@ -4,6 +4,7 @@
 
 import Phaser from 'phaser';
 import { generateAllTextures } from './texgen';
+import { queueAiSprites } from './aiArt';
 import { WorldScene } from '../scenes/WorldScene';
 
 export class BootScene extends Phaser.Scene {
@@ -14,8 +15,12 @@ export class BootScene extends Phaser.Scene {
   create(): void {
     const t0 = performance.now();
     generateAllTextures(this);
-    if (import.meta.env.DEV) console.log(`[boot] textures generated in ${Math.round(performance.now() - t0)}ms`);
-    this.scene.start('world');
+    queueAiSprites(this);
+    this.load.once('complete', () => {
+      if (import.meta.env.DEV) console.log(`[boot] textures generated in ${Math.round(performance.now() - t0)}ms`);
+      this.scene.start('world');
+    });
+    this.load.start();
   }
 }
 

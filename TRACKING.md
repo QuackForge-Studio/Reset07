@@ -4,6 +4,18 @@ Durable task log. Updated whenever a chunk of work lands. One line per item, new
 
 ## In progress
 
+- [x] AI art pipeline 100% COMPLETE: All 15 assets generated, transparent-keyed (sprites), resized, verified & saved in `public/art/` (9 sprites, 4 concept, 1 background). Ready for Pi integration.
+- [x] AI art background generated: C1 Garage -> `public/art/backgrounds/garage.png` (1920×1080 PNG, processed & verified).
+- [x] AI art concept generated: B4 Boss concept -> `public/art/concept/boss-concept.png` (1024×1024 PNG, processed & verified).
+- [x] AI art sprite generated: A9 City Core -> `public/art/sprites/core.png` (96×96 transparent PNG, processed & verified).
+- [x] AI art sprite generated: A8 Security Gate -> `public/art/sprites/gate.png` (64×64 transparent PNG, processed & verified).
+- [x] AI art sprite generated: A7 Boss Core -> `public/art/sprites/boss-core.png` (80×80 transparent PNG, processed & verified).
+- [x] AI art sprite generated: A6 Boss Core Guardian -> `public/art/sprites/boss.png` (160×160 transparent PNG, processed & verified).
+- [x] AI art sprite generated: A5 Detonator -> `public/art/sprites/enemy-detonator.png` (32×32 transparent PNG, processed & verified).
+- [x] AI art sprite generated: A4 Shield Unit -> `public/art/sprites/enemy-shield.png` (44×44 transparent PNG, processed & verified).
+- [x] AI art sprite generated: A3 Hunter Drone -> `public/art/sprites/enemy-hunter.png` (40×40 transparent PNG, processed & verified).
+- [x] AI art sprite generated: A2 Patrol Drone -> `public/art/sprites/enemy-drone.png` (40×40 transparent PNG, processed & verified).
+- [x] AI art sprite generated: A1 Player K-07 -> `public/art/sprites/player.png` (64×64 transparent PNG, processed & verified).
 - [x] v0.8.0 bump (package.json/lock + brand Loading/Title + play Title). Live bundle index-CcIBDnr-.js (30f9ce6 → qfa deploy).
 - [x] AI art pipeline: ART-PROMPTS.md (15 prompts: 9 sprites, 4 concept, 1 background) + public/art/ (README, sprites/concept/backgrounds). Antigravity is UI-only for image gen — agy CLI + 9router have no imageOutput; user pastes prompts, saves PNGs, Pi integrates.
 
@@ -26,6 +38,10 @@ Durable task log. Updated whenever a chunk of work lands. One line per item, new
 - [x] Final aggregate verification: `npm run verify` passed; commit pending.
 
 ## Done
+
+### Performance (2026-08-02)
+
+- [x] GPU fix: `fps: { target: 60, limit: 75 }` in `createGame.ts` caps update+render to 60-72Hz via Phaser 3.60+ `fps.limit`; previously rAF rendered at display refresh (measured 117-143 steps/s at 120-144Hz) — now ~72 steps/s on 144Hz (≈50% GPU frames cut), 60 on 120Hz, unchanged on 60Hz. Verified: probe (rAF vs game-step counting), typecheck, 49 unit tests, full game smoke, production build.
 
 ### Independent audit (2026-08-01)
 

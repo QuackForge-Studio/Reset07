@@ -28,6 +28,13 @@ export function createGame(parent: HTMLElement): Phaser.Game {
         fps: 60,
       },
     },
+    // `target` alone does nothing in rAF mode — on 120/144Hz displays the
+    // browser fires rAF at display rate and Phaser renders every tick, so
+    // the GPU works 2-2.4x harder than a 60fps game needs. `limit` (Phaser
+    // 3.60+) caps update+render to 60Hz regardless of display refresh.
+    // Gameplay is unchanged: logic/tweens are delta-based and arcade
+    // physics already steps at its own fixed 60Hz.
+    fps: { target: 60, limit: 75 },
     render: {
       antialias: true,
       roundPixels: false,

@@ -72,6 +72,7 @@ Playwright uses system Chrome at `C:/Program Files/Google/Chrome/Application/chr
 - **Scene restart**: Phaser `scene.restart()` reuses the same instance, so class-field arrays (`explosiveProps`, `enemyList`, `interactables`, `lamps`, opening flags) must be reset at the top of `create()` or they accumulate duplicates.
 - **Bullets × explosives**: uses a real `Phaser.Physics.Arcade.Group` (`explosiveGroup`), registered from `explosiveProps` in `create()`.
 - **Explosive fuse**: `onComplete` must not bail on `!this.scene` — the prop's scene ref dies before the tween completes; capture `scene` in the closure.
+- **fps config**: `fps: 60` (target) alone does NOTHING in rAF mode — the game renders at display refresh (120/144Hz → 2-2.4x GPU work). `createGame.ts` uses `fps: { target: 60, limit: 75 }` (Phaser 3.60+ `limit` caps update+render); keep `limit` ≥75 so 144Hz stays ≥60Hz effective. Don't "fix" it back to a bare number.
 - **QA probes**: heat weapon overheats after ~20 shots — bursts (release ~0.4s per 1.3s) avoid perma-overheat. Canvas needs a click for keyboard focus. Garage gate is at tiles x14-18 — sidestep into that x-range before walking south.
 
 - **Gate colliders**: closed Gate sprites must remain immovable and retain player/enemy colliders; destroy those colliders when the gate opens.
