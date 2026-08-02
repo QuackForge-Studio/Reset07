@@ -112,6 +112,12 @@ export function HUD({ snap }: { snap: HudSnapshot }) {
             </div>
           </div>
           <div className="hud__stat">
+            <span className={`type-data-xs ${snap.overheat ? 'hud__text-danger' : 'text-muted'}`}>HEAT</span>
+            <div className="hud__bar">
+              <div className={`hud__bar-fill hud__bar-fill--heat ${snap.overheat ? 'is-overheat' : ''}`} style={{ width: `${snap.heat * 100}%` }} />
+            </div>
+          </div>
+          <div className="hud__stat">
             <span className="type-data-xs text-muted">OVERDRIVE</span>
             <div className="hud__bar">
               <div className={`hud__bar-fill hud__bar-fill--od ${snap.overdriveActive ? 'is-active' : snap.overdrive >= 1 ? 'is-ready' : ''}`} style={{ width: `${snap.overdrive * 100}%` }} />

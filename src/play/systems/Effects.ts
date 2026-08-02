@@ -69,15 +69,25 @@ export class EffectManager {
     this.embers = mk('fx-ember', b.embers);
     this.debris = mk('fx-dot', b.debris);
     this.glows = mk('fx-glow', b.glows);
+    // effect layers must sit ABOVE the ground/buildings (depth 1-12) and near
+    // the action: smoke hugs the floor, glows/sparks/embers/debris float over
+    // entities, damage text is topmost.
+    for (const p of this.sparks) p.s.setDepth(72);
+    for (const p of this.smoke) p.s.setDepth(20);
+    for (const p of this.embers) p.s.setDepth(74);
+    for (const p of this.debris) p.s.setDepth(76);
+    for (const p of this.glows) p.s.setDepth(70);
     for (let i = 0; i < b.texts; i++) {
       const t = scene.add.text(-999, -999, '', { fontFamily: '"IBM Plex Mono", monospace', fontSize: '11px', color: '#f4f8ff' });
       t.setOrigin(0.5);
       t.setVisible(false);
+      t.setDepth(210);
       this.texts.push({ t, life: 0, maxLife: 1, vy: 0 });
     }
     for (let i = 0; i < b.arcs; i++) {
       const g = scene.add.graphics();
       g.setVisible(false);
+      g.setDepth(73);
       this.arcs.push(g);
     }
   }

@@ -105,6 +105,10 @@ export class Player extends DamageableSprite {
     return performance.now() < this.overheatUntil;
   }
 
+  get heatPct(): number {
+    return this.overheat ? 1 : this.heat / MAX_HEAT;
+  }
+
   get fireRateMul(): number {
     return this.overdriveActive ? 1.75 : 1;
   }
@@ -182,16 +186,27 @@ export class Player extends DamageableSprite {
     this.moving = mag > 0.15;
     if (this.isDashing) {
       this.setVelocity(this.dashDirX * 720, this.dashDirY * 720);
-      // afterimages
+      // afterimages (each fades out quickly so the trail never lingers)
       this.afterimageTimer -= dt;
       if (this.afterimageTimer <= 0) {
-        this.afterimageTimer = 0.028;
+        this.afterimageTimer = 0.045;
         const img = this.scene.add.image(this.x, this.y, 'player');
         img.setTint(PAL.cyan);
-        img.setAlpha(0.45);
+        img.setAlpha(0.4);
         img.setDepth(78);
         this.dashTrail.push(img);
-        if (this.dashTrail.length > 8) this.dashTrail.shift()?.destroy();
+        this.scene.tweens.add({
+          targets: img,
+          alpha: 0,
+          scale: 0.55,
+          duration: 420,
+          ease: 'Quad.easeOut',
+          onComplete: () => {
+            img.destroy();
+            const i = this.dashTrail.indexOf(img);
+            if (i >= 0) this.dashTrail.splice(i, 1);
+          },
+        });
       }
     } else {
       const ax = mx * this.accel;
@@ -247,12 +262,11 @@ export class Player extends DamageableSprite {
       this.fireBolt();
     }
     // cooling
-    if (this.overheat) {
-      if (now >= this.overheatUntil) {
-        this.heat = 0;
-        (this.scene as Phaser.Scene & { sfx?: (n: string) => void }).sfx?.('dashReady');
-      }
-    } else {
+    if (this.heat >= MAX_HEAT && now >= this.overheatUntil) {
+      // overheat ended — weapon snaps back to cold (and signals ready)
+      this.heat = 0;
+      (this.scene as Phaser.Scene & { sfx?: (n: string) => void }).sfx?.('dashReady');
+    } else if (!this.overheat) {
       this.heat = Math.max(0, this.heat - COOL_RATE * (this.modules.includes('cooling') ? 1.35 : 1) * dt);
     }
 

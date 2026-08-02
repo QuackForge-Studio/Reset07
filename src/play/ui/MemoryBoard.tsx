@@ -12,20 +12,29 @@ interface Props {
   onClose: () => void;
 }
 
-const NODE_W = 230;
-const NODE_H = 84;
+const NODE_W = 175;
+const NODE_H = 72;
+// logical board space (must match the .memory-board__canvas size)
+const BOARD_W = 800;
+const BOARD_H = 620;
+const CX = BOARD_W / 2;
+const CY = BOARD_H / 2;
 
 export function MemoryBoard({ save, onClose }: Props) {
   const owned = new Set(save.memories);
   const nodes = useMemo(() => {
-    // deterministic spiral layout around the center
+    // deterministic ring layout — radii alternate so adjacent cards clear
+    // each other (chord ~216px vs card width 190px)
     const n = MEMORIES.length;
     const positions: Array<{ x: number; y: number }> = [];
     const angleStep = (Math.PI * 2) / n;
-    const radius = 235;
+    const radius = 307;
     for (let i = 0; i < n; i++) {
       const a = angleStep * i - Math.PI / 2;
-      positions.push({ x: 340 + Math.cos(a) * radius * (i % 2 ? 0.82 : 1), y: 210 + Math.sin(a) * radius * 0.78 });
+      // radius alternates per node on BOTH axes so adjacent cards always
+      // clear each other (staggered ring, no rectangle overlap)
+      const rr = radius * (i % 2 ? 0.82 : 1);
+      positions.push({ x: CX + Math.cos(a) * rr, y: CY + Math.sin(a) * rr * 0.79 });
     }
     return MEMORIES.map((m, i) => ({ ...m, ...positions[i] }));
   }, []);
@@ -43,7 +52,7 @@ export function MemoryBoard({ save, onClose }: Props) {
         </div>
 
         <div className="memory-board__canvas">
-          <svg className="memory-board__links" viewBox="0 0 680 420" preserveAspectRatio="none" aria-hidden>
+          <svg className="memory-board__links" viewBox={`0 0 ${BOARD_W} ${BOARD_H}`} preserveAspectRatio="none" aria-hidden>
             {MEMORY_LINKS.map(([a, b], i) => {
               const pa = posOf(a);
               const pb = posOf(b);

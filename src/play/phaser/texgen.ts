@@ -1150,6 +1150,13 @@ export function generateAllTextures(scene: Phaser.Scene): void {
       g.fillRect(0, i * 8, 4, 8);
     }
   });
+  // enemy attack telegraph — dashed warning beam (reads as a laser warning)
+  mk(s, 'fx-telegraph', 4, 64, (g) => {
+    for (let i = 0; i < 6; i++) {
+      g.fillStyle(PAL.white, 0.9 - i * 0.12);
+      g.fillRect(0, i * 10, 4, 5);
+    }
+  });
   // muzzle flash
   mk(s, 'fx-muzzle', 24, 24, (g) => {
     g.fillStyle(PAL.white, 1);

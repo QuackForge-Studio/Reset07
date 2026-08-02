@@ -6,7 +6,7 @@
 
 import Phaser from 'phaser';
 import { PAL } from '../palette';
-import { CityGrid, PROPS, GATES, T, TILE, type Rect, type GateDef } from './cityData';
+import { CityGrid, PROPS, GATES, T, TILE, WORLD_W, WORLD_H, type Rect, type GateDef } from './cityData';
 import type { WorldScene } from '../types';
 import { Pathfinder } from '../systems/Pathfinder';
 import { Vehicle, FuelTank, GasPipe, Transformer, Puddle, RescueCapsule, EvacCapsule, MemoryCrystal, Relay, Uplink, Gate, Tram, DecorativeProp } from '../entities/environment';
@@ -27,6 +27,10 @@ export interface BuiltWorld {
 export function buildCity(scene: WorldScene): BuiltWorld {
   const grid = new CityGrid();
   scene.pathfinder = new Pathfinder(grid);
+  // dark underlay fills the void outside built districts — without it the
+  // page background shows through the transparent canvas at the map edges
+  // (reads as a flickering/blank void when the camera pans there)
+  scene.add.rectangle(WORLD_W / 2, WORLD_H / 2, WORLD_W, WORLD_H, PAL.building).setDepth(0);
   drawGround(scene, grid);
   drawBuildings(scene, grid);
   drawWalls(scene, grid);
@@ -159,6 +163,14 @@ function bakeColliders(scene: WorldScene, grid: CityGrid): void {
     const body = scene.add.zone(((r.x1 + r.x2 + 1) / 2) * TILE, ((r.y1 + r.y2 + 1) / 2) * TILE, w, h);
     group.add(body);
   }
+  // world perimeter — keep entities (and the player) inside the map; the
+  // tile grid is VOID outside the districts so nothing else blocks there.
+  const BAND = 128; // band thickness in px
+  const band = (cx: number, cy: number, w: number, h: number) => group.add(scene.add.zone(cx, cy, w, h));
+  band(WORLD_W / 2, -BAND / 2, WORLD_W + BAND * 2, BAND); // top
+  band(WORLD_W / 2, WORLD_H + BAND / 2, WORLD_W + BAND * 2, BAND); // bottom
+  band(-BAND / 2, WORLD_H / 2, BAND, WORLD_H); // left
+  band(WORLD_W + BAND / 2, WORLD_H / 2, BAND, WORLD_H); // right
   scene.collideWalls = group;
 }
 
@@ -227,7 +239,9 @@ function buildProps(scene: WorldScene): Array<{ x: number; y: number; kind: stri
       }
       case 'memory': {
         const mem = MEMORIES.find((m) => m.id === p.id);
-        if (mem) {
+        // don't re-spawn fragments that were already recovered in an earlier
+        // loop — otherwise the RECOVER MEMORY prompt silently does nothing
+        if (mem && !scene.save.memories.includes(mem.id)) {
           const crystal = new MemoryCrystal(scene, x, y, mem.id, { onCollect: (id) => scene.onMemoryCollected(id) });
           scene.interactables.push(crystal);
         }

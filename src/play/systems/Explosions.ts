@@ -139,6 +139,7 @@ export class ExplosionSystem {
     if (p.flash > 0) {
       const f = scene.add.image(x, y, 'fx-flash');
       f.setBlendMode(Phaser.BlendModes.ADD);
+      f.setDepth(78);
       f.setScale(p.fireball / 30);
       f.setAlpha(Math.min(1, p.flash * (quality === 'low' ? 0.5 : 1)));
       scene.tweens.add({ targets: f, alpha: 0, scale: p.fireball / 30 * 1.5, duration: 120, onComplete: () => f.destroy() });
@@ -146,6 +147,7 @@ export class ExplosionSystem {
     // 2. central fireball
     const fb = scene.add.image(x, y, 'fx-glow-big');
     fb.setBlendMode(Phaser.BlendModes.ADD);
+    fb.setDepth(75);
     fb.setTint(p.color);
     fb.setScale(0.1);
     scene.tweens.add({
@@ -159,6 +161,7 @@ export class ExplosionSystem {
     // 2b. hot core
     const core = scene.add.image(x, y, 'fx-flash');
     core.setBlendMode(Phaser.BlendModes.ADD);
+    core.setDepth(76);
     core.setTint(PAL.white);
     core.setScale(p.fireball / 40);
     scene.tweens.add({ targets: core, alpha: 0, duration: 260, onComplete: () => core.destroy() });
@@ -169,6 +172,7 @@ export class ExplosionSystem {
       const dist = p.fireball * (0.6 + Math.random() * 0.7);
       const blob = scene.add.image(x + Math.cos(a) * dist, y + Math.sin(a) * dist, 'fx-glow');
       blob.setBlendMode(Phaser.BlendModes.ADD);
+      blob.setDepth(74);
       blob.setTint(i % 2 ? p.color : p.color2);
       blob.setScale((p.fireball / 48) * (0.4 + Math.random() * 0.6));
       scene.tweens.add({
@@ -184,6 +188,7 @@ export class ExplosionSystem {
     // 4. shockwave ring
     const ring = scene.add.image(x, y, 'fx-ring');
     ring.setBlendMode(Phaser.BlendModes.ADD);
+    ring.setDepth(73);
     ring.setTint(p.color2);
     ring.setScale(0.2);
     scene.tweens.add({
@@ -197,6 +202,7 @@ export class ExplosionSystem {
     if (quality !== 'low') {
       const ring2 = scene.add.image(x, y, 'fx-ring');
       ring2.setBlendMode(Phaser.BlendModes.ADD);
+      ring2.setDepth(73);
       ring2.setTint(PAL.white);
       ring2.setScale(0.1);
       scene.tweens.add({
@@ -230,6 +236,7 @@ export class ExplosionSystem {
     // 8. scorch decal (persistent, capped list)
     if (p.scorch) {
       const sc = scene.add.image(x + (Math.random() - 0.5) * 10, y + (Math.random() - 0.5) * 10, 'scorch');
+      sc.setDepth(5); // above ground (1), below props/buildings (10+)
       sc.setScale((p.radius / 34) * (0.8 + Math.random() * 0.5));
       sc.setAlpha(0);
       scene.tweens.add({ targets: sc, alpha: 1, duration: 400, delay: 100 });

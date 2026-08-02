@@ -463,6 +463,9 @@ html[data-motion='reduced'] .panel { animation: none; }
 .hud__bar-fill--od { background: var(--color-corruption-magenta); }
 .hud__bar-fill--od.is-ready { box-shadow: 0 0 8px rgba(255, 61, 154, 0.8); animation: od-ready 0.7s ease infinite alternate; }
 .hud__bar-fill--od.is-active { background: var(--color-signal-white); box-shadow: 0 0 12px rgba(244, 248, 255, 0.9); }
+.hud__bar-fill--heat { background: linear-gradient(90deg, var(--color-reactor-orange), #ffc44a); opacity: 0.8; }
+.hud__bar-fill--heat.is-overheat { background: var(--color-corruption-magenta); opacity: 1; animation: hp-flicker 0.35s steps(2) infinite; box-shadow: 0 0 10px rgba(255, 61, 154, 0.8); }
+.hud__text-danger { color: var(--color-corruption-magenta); }
 
 @keyframes od-ready { from { filter: brightness(1); } to { filter: brightness(1.6); } }
 
@@ -761,17 +764,20 @@ html[data-motion='reduced'] .panel { animation: none; }
 .set-confirm div { display: flex; gap: 8px; }
 .settings__back { margin-top: 6px; }
 
-.memory-board { width: min(94vw, 760px); }
+.memory-board { width: min(94vw, 880px); }
 .memory-board__head { display: flex; flex-direction: column; gap: 4px; }
 .memory-board__canvas {
   position: relative;
   width: 100%;
-  height: 420px;
+  height: 620px;
+  min-width: 800px;
+  flex: 0 0 auto;
   border: 1px solid var(--color-border-subtle);
   background: radial-gradient(60% 50% at 50% 50%, rgba(56, 232, 255, 0.04), transparent);
-  overflow: hidden;
+  overflow-x: auto;
+  overflow-y: hidden;
 }
-.memory-board__links { position: absolute; inset: 0; width: 100%; height: 100%; }
+.memory-board__links { position: absolute; inset: 0; width: 800px; height: 620px; }
 .mem-link { stroke: rgba(56, 232, 255, 0.12); stroke-dasharray: 4 4; }
 .mem-link.is-on { stroke: rgba(56, 232, 255, 0.6); stroke-dasharray: none; }
 
@@ -812,7 +818,7 @@ html[data-motion='reduced'] .panel { animation: none; }
 .mem-node.is-owned:hover .mem-node__text { display: block; }
 
 @media (max-width: 700px) {
-  .memory-board__canvas { height: 340px; }
+  .memory-board__canvas { height: 620px; }
   .mem-node { transform: scale(0.78); transform-origin: top left; }
 }
 

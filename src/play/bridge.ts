@@ -15,6 +15,8 @@ export interface HudSnapshot {
   hp: number;
   maxHp: number;
   dash: number; // 0..1 ready→1
+  heat: number; // 0..1 weapon heat (1 = overheated)
+  overheat: boolean;
   overdrive: number; // 0..1
   overdriveActive: boolean;
   objective: { text: string; worldX: number; worldY: number } | null;
@@ -102,6 +104,8 @@ let snapshot: HudSnapshot = {
   hp: 100,
   maxHp: 100,
   dash: 1,
+  heat: 0,
+  overheat: false,
   overdrive: 0,
   overdriveActive: false,
   objective: null,

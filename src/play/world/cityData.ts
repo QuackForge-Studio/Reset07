@@ -409,9 +409,9 @@ export const PROPS: PropDef[] = [
   { kind: 'vehicle', tile: [37, 68], variant: 'car', dir: 1 },
   { kind: 'vehicle', tile: [41, 68], variant: 'truck', dir: 3 },
   // parked cars along y92
-  { kind: 'vehicle', tile: [12, 92], variant: 'car', dir: 1 },
-  { kind: 'vehicle', tile: [18, 92], variant: 'car', dir: 1 },
-  { kind: 'vehicle', tile: [24, 92], variant: 'van', dir: 1 },
+  { kind: 'vehicle', tile: [11, 92], variant: 'car', dir: 1 },
+  { kind: 'vehicle', tile: [20, 92], variant: 'car', dir: 1 },
+  { kind: 'vehicle', tile: [28, 92], variant: 'van', dir: 1 },
   { kind: 'vehicle', tile: [44, 92], variant: 'car', dir: 3 },
   { kind: 'vehicle', tile: [48, 92], variant: 'car', dir: 3 },
   // alley clutter

@@ -203,8 +203,8 @@ export class WorldScene extends Phaser.Scene implements WorldSceneI {
     });
 
     // ── colliders / overlaps ──
-    this.physics.add.collider(this.playerBolts, this.collideWalls, (bolt) => this.boltHitWall(bolt as Phaser.GameObjects.Sprite));
-    this.physics.add.collider(this.enemyBolts, this.collideWalls, (bolt) => this.boltHitWall(bolt as Phaser.GameObjects.Sprite));
+    this.physics.add.collider(this.playerBolts, this.collideWalls, (bolt) => this.boltHitWall(bolt as Phaser.GameObjects.Sprite, PAL.cyan));
+    this.physics.add.collider(this.enemyBolts, this.collideWalls, (bolt) => this.boltHitWall(bolt as Phaser.GameObjects.Sprite, PAL.orange));
     this.physics.add.collider(this.player, this.collideWalls);
     this.physics.add.collider(this.enemyGroup, this.collideWalls);
     for (const { gate } of this.gates) {
@@ -519,8 +519,28 @@ export class WorldScene extends Phaser.Scene implements WorldSceneI {
     this.tweens.add({ targets: m, alpha: 0, scale: 0.4, duration: 60, onComplete: () => m.destroy() });
   }
 
-  private boltHitWall(bolt: Phaser.GameObjects.Sprite): void {
-    this.fx.spawnSpark(bolt.x, bolt.y, PAL.cyan, (Math.random() - 0.5) * 60, (Math.random() - 0.5) * 60, 0.12, 0.7);
+  private boltHitWall(bolt: Phaser.GameObjects.Sprite, color = PAL.cyan): void {
+    // sparks bounce back off the surface
+    const a = bolt.rotation;
+    for (let i = 0; i < 4; i++) {
+      const sa = a + Math.PI + (Math.random() - 0.5) * 1.6;
+      const sp = 60 + Math.random() * 150;
+      this.fx.spawnSpark(bolt.x, bolt.y, i % 2 ? color : PAL.white, Math.cos(sa) * sp, Math.sin(sa) * sp, 0.16 + Math.random() * 0.14, 0.7 + Math.random() * 0.5);
+    }
+    // small impact flash + ring so wall hits read clearly
+    const fl = this.add.image(bolt.x, bolt.y, 'fx-muzzle');
+    fl.setTint(color);
+    fl.setDepth(74);
+    fl.setBlendMode(Phaser.BlendModes.ADD);
+    fl.setScale(0.45);
+    this.tweens.add({ targets: fl, alpha: 0, scale: 0.9, duration: 90, onComplete: () => fl.destroy() });
+    const r = this.add.image(bolt.x, bolt.y, 'fx-ring');
+    r.setTint(color);
+    r.setDepth(73);
+    r.setBlendMode(Phaser.BlendModes.ADD);
+    r.setScale(0.12);
+    this.tweens.add({ targets: r, alpha: 0, scale: 0.45, duration: 190, onComplete: () => r.destroy() });
+    this.sfx('impact');
     bolt.destroy();
   }
 
@@ -1550,6 +1570,8 @@ export class WorldScene extends Phaser.Scene implements WorldSceneI {
       hp: Math.max(0, Math.round(this.player.hp)),
       maxHp: this.player.maxHp,
       dash: this.player.dashPct,
+      heat: this.player.heatPct,
+      overheat: this.player.overheat,
       overdrive: this.player.overdrivePct,
       overdriveActive: this.player.overdriveActive,
       objective: obj ? { text: t(obj.descKey), worldX: obj.tile[0] * TILE + TILE / 2, worldY: obj.tile[1] * TILE + TILE / 2 } : null,

@@ -93,7 +93,7 @@ export class Telegraph {
   private arc: Phaser.GameObjects.Arc | null = null;
 
   constructor(scene: Phaser.Scene, x: number, y: number) {
-    this.line = scene.add.image(x, y, 'fx-beam');
+    this.line = scene.add.image(x, y, 'fx-telegraph');
     this.line.setOrigin(0.5, 0.5);
     this.line.setBlendMode(Phaser.BlendModes.ADD);
     this.line.setVisible(false);
@@ -105,7 +105,9 @@ export class Telegraph {
     this.line.setRotation(angle);
     this.line.setScale(length / 64, 1);
     this.line.setTint(color);
-    this.line.setAlpha(alpha);
+    // subtle pulse so the warning reads as active, not a stuck streak
+    const t = this.line.scene.time.now / 65;
+    this.line.setAlpha(alpha * (0.72 + 0.28 * Math.sin(t)));
     this.line.setVisible(true);
   }
 
