@@ -66,7 +66,7 @@ export function TitleScreen({ canContinue, hasSave, onNew, onContinue, onSetting
         </nav>
 
         <div className="title-screen__footer type-data-xs text-muted">
-          <span>v0.7.0</span>
+          <span>v0.8.0</span>
           <span className="title-screen__dot">•</span>
           <span>KEYBOARD · GAMEPAD · TOUCH</span>
           <span className="title-screen__dot">•</span>

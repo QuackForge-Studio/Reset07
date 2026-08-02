@@ -32,7 +32,7 @@ export interface TitleScreenProps {
 export function TitleScreen({
   onSelect,
   animateLogo = true,
-  version = '0.7.0',
+  version = '0.8.0',
   loopLabel = 'LOOP 07',
   className,
 }: TitleScreenProps) {

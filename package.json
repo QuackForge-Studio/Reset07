@@ -1,7 +1,7 @@
 {
   "name": "reset07-brand-kit",
   "private": true,
-  "version": "0.7.0",
+  "version": "0.8.0",
   "type": "module",
   "description": "RESET//07 \u2014 brand system, UI kit, and internal guidelines for a top-down neon sci-fi action game trapped in a seven-minute loop.",
   "scripts": {

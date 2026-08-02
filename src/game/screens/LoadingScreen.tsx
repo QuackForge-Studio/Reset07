@@ -51,7 +51,7 @@ export function LoadingScreen({ progress, status = 'INITIALIZING LOOP', showProg
 
       <footer className="loading-screen__foot">
         <span className="type-data-s text-muted">SEVEN MINUTES // SEVEN LOOPS</span>
-        <span className="type-data-s text-muted">RESET//07 — v0.7.0</span>
+        <span className="type-data-s text-muted">RESET//07 — v0.8.0</span>
       </footer>
 
       {/* Bottom-edge progress line */}
