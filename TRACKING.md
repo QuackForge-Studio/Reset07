@@ -4,6 +4,9 @@ Durable task log. Updated whenever a chunk of work lands. One line per item, new
 
 ## In progress
 
+- [x] v0.8.0 bump (package.json/lock + brand Loading/Title + play Title). Live bundle index-CcIBDnr-.js (30f9ce6 → qfa deploy).
+- [x] AI art pipeline: ART-PROMPTS.md (15 prompts: 9 sprites, 4 concept, 1 background) + public/art/ (README, sprites/concept/backgrounds). Antigravity is UI-only for image gen — agy CLI + 9router have no imageOutput; user pastes prompts, saves PNGs, Pi integrates.
+
 - [x] Project-scoped subagents created in `.pi/agents/`: r07-bugfixer, r07-art-reviewer, r07-city-architect, r07-qa-verifier (all fresh-context, read AGENTS.md; sanity-tested via r07-bugfixer structure dump).
 
 - [x] Playtest round 3: visible city-wall band at all four map rims (perimeter colliders moved inside the map; glowing inner edge); transit-sector platform blocks punched with lit cross-passages so the 4 parallel lanes connect (cyan-bordered doorway markers); patrol drones now rotate to face their shot while telegraphing/bursting. Live deployed 570e90b.
