@@ -8,16 +8,17 @@ export interface EnemyStats {
   hp: number;
   speed: number;
   radius: number;
+  scale: number; // sprite + hitbox scale multiplier (visual size bump)
   touchDamage: number;
   overdriveMultiplier: number; // damage taken during overdrive mark
   weight: number; // separation mass
 }
 
 export const ENEMY_STATS: Record<EnemyKind, EnemyStats> = {
-  drone: { hp: 26, speed: 138, radius: 13, touchDamage: 8, overdriveMultiplier: 1.5, weight: 1 },
-  hunter: { hp: 44, speed: 262, radius: 14, touchDamage: 20, overdriveMultiplier: 1.5, weight: 1.2 },
-  shield: { hp: 78, speed: 64, radius: 15, touchDamage: 12, overdriveMultiplier: 1.5, weight: 2 },
-  detonator: { hp: 14, speed: 208, radius: 11, touchDamage: 10, overdriveMultiplier: 1.5, weight: 0.8 },
+  drone: { hp: 26, speed: 138, radius: 13, scale: 1.5, touchDamage: 8, overdriveMultiplier: 1.5, weight: 1 },
+  hunter: { hp: 44, speed: 262, radius: 14, scale: 1.5, touchDamage: 20, overdriveMultiplier: 1.5, weight: 1.2 },
+  shield: { hp: 78, speed: 64, radius: 15, scale: 1.4, touchDamage: 12, overdriveMultiplier: 1.5, weight: 2 },
+  detonator: { hp: 14, speed: 208, radius: 11, scale: 1.6, touchDamage: 10, overdriveMultiplier: 1.5, weight: 0.8 },
 };
 
 export interface BossStats {
