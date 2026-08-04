@@ -3,7 +3,8 @@
  */
 
 import Phaser from 'phaser';
-import { generateAllTextures } from './texgen';
+import { generateAllTextures, generatePlayerSheetFallback } from './texgen';
+import { createPlayerAnims } from './playerAnims';
 import { queueAiSprites } from './aiArt';
 import { WorldScene } from '../scenes/WorldScene';
 
@@ -18,6 +19,11 @@ export class BootScene extends Phaser.Scene {
     queueAiSprites(this);
     this.load.once('complete', () => {
       if (import.meta.env.DEV) console.log(`[boot] textures generated in ${Math.round(performance.now() - t0)}ms`);
+      // guarantee the player sheet + animations exist (AI art wins when provided)
+      if (!this.textures.exists('player-sheet')) {
+        generatePlayerSheetFallback(this);
+      }
+      createPlayerAnims(this);
       this.scene.start('world');
     });
     this.load.start();

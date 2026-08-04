@@ -31,39 +31,78 @@ export const AI_SPRITES: ReadonlyArray<AiSpriteSpec> = [
   { key: 'core', file: 'core.png', width: 96, height: 96 },
 ];
 
+export interface AiSheetSpec {
+  /** Phaser texture key this sheet replaces (a sprite-sheet texture). */
+  key: string;
+  /** Path under public/art/sprites/. */
+  file: string;
+  /** Grid cell size — must equal texgen canvas / physics expectations. */
+  frameWidth: number;
+  frameHeight: number;
+  cols: number;
+  rows: number;
+}
+
+export const AI_SHEETS: ReadonlyArray<AiSheetSpec> = [
+  { key: 'player-sheet', file: 'player-sheet.png', frameWidth: 64, frameHeight: 64, cols: 6, rows: 3 },
+];
+
 /**
- * Queue every AI sprite for loading under temporary keys, then register a
- * handler that swaps each successfully loaded image into the texture manager
+ * Queue every AI sprite/sheet for loading under temporary keys, then register
+ * a handler that swaps each successfully loaded image into the texture manager
  * under its real key (replacing the procedural texture). Call once, then
  * `scene.load.start()` and wait for `complete` before starting the world.
  */
 export function queueAiSprites(scene: Phaser.Scene): void {
   // Register a single filecomplete handler (not per-file) so every queued
   // file is processed; then queue all files.
-  const files = AI_SPRITES.map((s) => ({ tmp: `aix_${s.key}`, spec: s }));
-  for (const { tmp, spec } of files) {
-    scene.load.image(tmp, `art/sprites/${spec.file}`);
+  const specs: Array<{ tmp: string; sprite?: AiSpriteSpec; sheet?: AiSheetSpec }> = [
+    ...AI_SPRITES.map((s) => ({ tmp: `aix_${s.key}`, sprite: s })),
+    ...AI_SHEETS.map((s) => ({ tmp: `aix_${s.key}`, sheet: s })),
+  ];
+  for (const { tmp, sprite, sheet } of specs) {
+    const file = sprite ? sprite.file : sheet?.file;
+    if (!file) continue;
+    scene.load.image(tmp, `art/sprites/${file}`);
   }
   scene.load.on('filecomplete', (key: string) => {
-    const hit = files.find((f) => f.tmp === key);
+    const hit = specs.find((f) => f.tmp === key);
     if (!hit) return;
-    const { spec } = hit;
-    const img = scene.textures.get(key).getSourceImage() as HTMLImageElement;
-    const ok = img && img.width === spec.width && img.height === spec.height;
-    if (!ok) {
-      if (import.meta.env.DEV) console.warn(`[ai-art] skip ${spec.key}: size mismatch`);
+    if (hit.sprite) {
+      const { sprite } = hit;
+      const img = scene.textures.get(key).getSourceImage() as HTMLImageElement;
+      const ok = img && img.width === sprite.width && img.height === sprite.height;
+      if (!ok) {
+        if (import.meta.env.DEV) console.warn(`[ai-art] skip ${sprite.key}: size mismatch`);
+        scene.textures.remove(key);
+        return;
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = sprite.width;
+      canvas.height = sprite.height;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+      ctx.drawImage(img, 0, 0);
       scene.textures.remove(key);
+      scene.textures.remove(sprite.key);
+      scene.textures.addCanvas(sprite.key, canvas);
+      if (import.meta.env.DEV) console.log(`[ai-art] applied ${sprite.key} (${sprite.width}x${sprite.height})`);
       return;
     }
-    const canvas = document.createElement('canvas');
-    canvas.width = spec.width;
-    canvas.height = spec.height;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-    ctx.drawImage(img, 0, 0);
-    scene.textures.remove(key);
-    scene.textures.remove(spec.key);
-    scene.textures.addCanvas(spec.key, canvas);
-    if (import.meta.env.DEV) console.log(`[ai-art] applied ${spec.key} (${spec.width}x${spec.height})`);
+    if (hit.sheet) {
+      const { sheet } = hit;
+      const img = scene.textures.get(key).getSourceImage() as HTMLImageElement;
+      const ok = img && img.width === sheet.cols * sheet.frameWidth && img.height === sheet.rows * sheet.frameHeight;
+      if (!ok) {
+        if (import.meta.env.DEV) console.warn(`[ai-art] skip ${sheet.key}: size mismatch`);
+        scene.textures.remove(key);
+        return;
+      }
+      scene.textures.remove(key);
+      scene.textures.remove(sheet.key);
+      scene.textures.addSpriteSheet(sheet.key, img, { frameWidth: sheet.frameWidth, frameHeight: sheet.frameHeight });
+      if (import.meta.env.DEV) console.log(`[ai-art] applied ${sheet.key} (${img.width}x${img.height}, ${sheet.cols}x${sheet.rows})`);
+      return;
+    }
   });
 }
