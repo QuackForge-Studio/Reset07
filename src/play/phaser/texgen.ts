@@ -68,6 +68,101 @@ function hexStroke(g: G, cx: number, cy: number, r: number, rot = Math.PI / 6): 
   );
 }
 
+/**
+ * K-07 trooper (facing UP), pose 0-5: idle A, idle B, walk A, walk B,
+ * shoot A, shoot B. Placeholder poses for the player sprite sheet —
+ * the AI sheet (when provided) replaces the whole sheet texture.
+ */
+function paintPlayer(g: G, pose = 0): void {
+  const bobY = pose === 1 || pose === 3 ? 1 : 0;
+  const swayX = pose === 2 ? -2 : pose === 3 ? 2 : 0;
+  const recoilY = pose === 4 ? 2 : pose === 5 ? 1 : 0;
+  g.save();
+  g.translateCanvas(swayX, bobY + recoilY);
+  // backpack
+  g.fillStyle(PAL.surfaceHi, 1);
+  g.fillRoundedRect(26, 40, 12, 8, 2);
+  g.lineStyle(1, PAL.metalHi, 1);
+  g.strokeRoundedRect(26, 40, 12, 8, 2);
+  // torso armor
+  g.fillStyle(PAL.navy, 1);
+  g.fillRoundedRect(17, 26, 30, 20, 6);
+  g.lineStyle(2, PAL.metalHi, 1);
+  g.strokeRoundedRect(17, 26, 30, 20, 6);
+  // chest core
+  g.fillStyle(PAL.cyan, 1);
+  g.fillCircle(32, 34, 3);
+  g.fillStyle(PAL.white, 0.9);
+  g.fillCircle(33, 33, 1);
+  // side arms
+  g.fillStyle(PAL.metalHi, 1);
+  g.fillRect(13, 30, 4, 10);
+  g.fillRect(47, 30, 4, 10);
+  // shoulder pads
+  g.fillStyle(PAL.surfaceHi, 1);
+  g.fillCircle(18, 28, 6);
+  g.fillCircle(46, 28, 6);
+  g.lineStyle(1.5, PAL.cyan, 0.9);
+  g.strokeCircle(18, 28, 6);
+  g.strokeCircle(46, 28, 6);
+  // rifle (points up, carried on the right)
+  g.fillStyle(PAL.metalHi, 1);
+  g.fillRect(39.5, 5, 3.5, 13);
+  g.fillStyle(PAL.cyan, 1);
+  g.fillRect(39.5, 3.5, 3.5, 2.5); // muzzle
+  g.fillStyle(PAL.white, 0.9);
+  g.fillRect(40, 4, 1.5, 1.5);
+  g.fillStyle(PAL.navy, 1);
+  g.fillRect(42.5, 13, 2.5, 6); // stock
+  g.fillStyle(PAL.surfaceHi, 1);
+  g.fillCircle(41.5, 17.5, 2.5); // hand
+  // helmet + visor
+  g.fillStyle(PAL.navy, 1);
+  g.fillCircle(32, 19, 8.5);
+  g.lineStyle(2, PAL.cyan, 0.95);
+  g.strokeCircle(32, 19, 8.5);
+  g.fillStyle(PAL.cyan, 1);
+  g.fillRoundedRect(25.5, 16.5, 13, 4, 2); // visor band
+  g.fillStyle(PAL.white, 0.9);
+  g.fillRect(27.5, 17.5, 3, 1.5); // visor glint
+  // muzzle flash on shoot poses
+  if (pose === 4 || pose === 5) {
+    g.fillStyle(PAL.white, 0.95);
+    g.fillCircle(41.5, 3, pose === 4 ? 3 : 2);
+    g.fillStyle(PAL.cyan, 0.9);
+    g.fillCircle(41.5, 3, pose === 4 ? 1.6 : 1.1);
+  }
+  g.restore();
+}
+
+/**
+ * Procedural placeholder K-07 sprite sheet (6×3 grid of 64px cells:
+ * rows down/side/up, cols idle/walk/shoot). Generated at boot only when
+ * the AI sheet is absent, so the animation state machine always has
+ * frames. The real `player-sheet.png` (aiArt) replaces this texture.
+ */
+export function generatePlayerSheetFallback(scene: Phaser.Scene): boolean {
+  if (scene.textures.exists('player-sheet')) return false;
+  const g = scene.make.graphics({ x: 0, y: 0 }, false);
+  for (let row = 0; row < 3; row++) {
+    for (let col = 0; col < 6; col++) {
+      g.save();
+      g.translateCanvas(col * 64, row * 64);
+      paintPlayer(g, col); // pose == column index
+      g.restore();
+    }
+  }
+  g.generateTexture('player-sheet', 384, 192);
+  g.destroy();
+  // re-register as a sprite sheet so frames are 64×64 cells
+  const src = scene.textures.get('player-sheet').getSourceImage() as HTMLCanvasElement;
+  scene.textures.remove('player-sheet');
+  scene.textures.addCanvas('player-sheet', src);
+  scene.textures.addSpriteSheet('player-sheet', scene.textures.get('player-sheet'), { frameWidth: 64, frameHeight: 64 });
+  if (import.meta.env.DEV) console.log('[boot] procedural player sheet fallback generated');
+  return true;
+}
+
 export function generateAllTextures(scene: Phaser.Scene): void {
   const s = scene;
 
@@ -199,52 +294,7 @@ export function generateAllTextures(scene: Phaser.Scene): void {
 
   // ── Player K-07: trooper with rifle, facing UP ───────────
   mk(s, 'player', 64, 64, (g) => {
-    // backpack
-    g.fillStyle(PAL.surfaceHi, 1);
-    g.fillRoundedRect(26, 40, 12, 8, 2);
-    g.lineStyle(1, PAL.metalHi, 1);
-    g.strokeRoundedRect(26, 40, 12, 8, 2);
-    // torso armor
-    g.fillStyle(PAL.navy, 1);
-    g.fillRoundedRect(17, 26, 30, 20, 6);
-    g.lineStyle(2, PAL.metalHi, 1);
-    g.strokeRoundedRect(17, 26, 30, 20, 6);
-    // chest core
-    g.fillStyle(PAL.cyan, 1);
-    g.fillCircle(32, 34, 3);
-    g.fillStyle(PAL.white, 0.9);
-    g.fillCircle(33, 33, 1);
-    // side arms
-    g.fillStyle(PAL.metalHi, 1);
-    g.fillRect(13, 30, 4, 10);
-    g.fillRect(47, 30, 4, 10);
-    // shoulder pads
-    g.fillStyle(PAL.surfaceHi, 1);
-    g.fillCircle(18, 28, 6);
-    g.fillCircle(46, 28, 6);
-    g.lineStyle(1.5, PAL.cyan, 0.9);
-    g.strokeCircle(18, 28, 6);
-    g.strokeCircle(46, 28, 6);
-    // rifle (points up, carried on the right)
-    g.fillStyle(PAL.metalHi, 1);
-    g.fillRect(39.5, 5, 3.5, 13);
-    g.fillStyle(PAL.cyan, 1);
-    g.fillRect(39.5, 3.5, 3.5, 2.5); // muzzle
-    g.fillStyle(PAL.white, 0.9);
-    g.fillRect(40, 4, 1.5, 1.5);
-    g.fillStyle(PAL.navy, 1);
-    g.fillRect(42.5, 13, 2.5, 6); // stock
-    g.fillStyle(PAL.surfaceHi, 1);
-    g.fillCircle(41.5, 17.5, 2.5); // hand
-    // helmet + visor
-    g.fillStyle(PAL.navy, 1);
-    g.fillCircle(32, 19, 8.5);
-    g.lineStyle(2, PAL.cyan, 0.95);
-    g.strokeCircle(32, 19, 8.5);
-    g.fillStyle(PAL.cyan, 1);
-    g.fillRoundedRect(25.5, 16.5, 13, 4, 2); // visor band
-    g.fillStyle(PAL.white, 0.9);
-    g.fillRect(27.5, 17.5, 3, 1.5); // visor glint
+    paintPlayer(g);
   });
   mk(s, 'player-od', 64, 64, (g) => {
     g.fillStyle(PAL.white, 0.35);
