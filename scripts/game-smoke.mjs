@@ -160,8 +160,24 @@ async function runDesktop(browser, errors) {
   const movementEnd = await page.evaluate(() => window.__r07.scene.player.x);
   check(movementEnd - movementStart > 35, 'player moves from rest', `${Math.round(movementEnd - movementStart)}px`);
 
+  // Player animation state machine (sheet always exists via procedural fallback)
+  await page.keyboard.down('d');
+  await page.waitForTimeout(300);
+  const animKey = await page.evaluate(() => window.__r07.scene.player.anims?.currentAnim?.key ?? '');
+  check(animKey.startsWith('p-walk-side'), 'player plays walk anim while moving', animKey);
+  await page.keyboard.up('d');
+  await page.keyboard.down('a');
+  await page.waitForTimeout(300);
+  const flipX = await page.evaluate(() => window.__r07.scene.player.flipX === true);
+  await page.keyboard.up('a');
+  check(flipX, 'player mirrors (flipX) when facing left', String(flipX));
+
   await page.waitForFunction(() => window.__r07.scene.enemyList.length > 0, { timeout: 10_000 });
   check((await page.evaluate(() => window.__r07.scene.enemyList.length)) > 0, 'opening enemy appears');
+  const enemyScales = await page.evaluate(() =>
+    window.__r07.scene.enemyList.map((e) => Number(e.scaleX.toFixed(2)))
+  );
+  check(enemyScales.length > 0 && enemyScales.every((s) => s >= 1.4), 'enemies are scaled up', enemyScales.join(','));
 
   // The gate must physically stop the player while still closed.
   await setPlayer(page, 528, 2740);
