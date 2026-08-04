@@ -4,6 +4,7 @@ Durable task log. Updated whenever a chunk of work lands. One line per item, new
 
 ## In progress
 
+- [x] Player animation: 4-dir sprite sheet (procedural fallback + AI sheet swap) idle/walk/shoot state machine; enemies scaled 1.4-1.6x with proportional centered hitboxes. A1s prompt in ART-PROMPTS.md ready for user generation.
 - [x] AI art pipeline 100% COMPLETE: All 15 assets generated, transparent-keyed (sprites), resized, verified & saved in `public/art/` (9 sprites, 4 concept, 1 background). Ready for Pi integration.
 - [x] AI art background generated: C1 Garage -> `public/art/backgrounds/garage.png` (1920×1080 PNG, processed & verified).
 - [x] AI art concept generated: B4 Boss concept -> `public/art/concept/boss-concept.png` (1024×1024 PNG, processed & verified).
