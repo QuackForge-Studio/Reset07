@@ -12,6 +12,7 @@ import type { EffectManager } from '../systems/Effects';
 import type { InputState } from '../systems/InputState';
 import { calcDamage } from '../systems/combat';
 import type { ModuleId } from '../data/modules';
+import { pickPlayerAnim, type PlayerAnimChoice } from '../systems/animLogic';
 
 export interface PlayerEvents {
   onFire?: (x: number, y: number, angle: number) => void;
@@ -61,9 +62,11 @@ export class Player extends DamageableSprite {
   private glow: Phaser.GameObjects.Image;
   private dashTrail: Phaser.GameObjects.Image[] = [];
   private lowHpWarned = false;
+  private animChoice: PlayerAnimChoice = { state: 'idle', row: 'up', flipX: false };
 
   constructor(scene: Phaser.Scene, x: number, y: number, fx: EffectManager, modules: ModuleId[], ev: PlayerEvents = {}) {
-    super(scene, x, y, 'player', 100, { onDie: () => ev.onDeath?.() });
+    const tex = scene.textures.exists('player-sheet') ? 'player-sheet' : 'player';
+    super(scene, x, y, tex, 100, { onDie: () => ev.onDeath?.() });
     this.fx = fx;
     this.modules = modules;
     this.ev = ev;
@@ -190,7 +193,8 @@ export class Player extends DamageableSprite {
       this.afterimageTimer -= dt;
       if (this.afterimageTimer <= 0) {
         this.afterimageTimer = 0.045;
-        const img = this.scene.add.image(this.x, this.y, 'player');
+        const img = this.scene.add.image(this.x, this.y, this.texture.key);
+        img.setFrame(this.frame.name);
         img.setTint(PAL.cyan);
         img.setAlpha(0.4);
         img.setDepth(78);
@@ -287,6 +291,22 @@ export class Player extends DamageableSprite {
       this.clearTint();
     }
     this.applyFlashAndKnock(dt);
+
+    // ── animation: facing from aim while firing, movement while running ──
+    const choice = pickPlayerAnim({
+      firing: wantFire && !this.overheat,
+      moving: this.moving || this.isDashing,
+      aimAngle: this.aimAngle,
+      moveX: mx,
+      moveY: my,
+      last: this.animChoice,
+    });
+    this.setFlipX(choice.flipX);
+    if (choice.row !== this.animChoice.row || choice.state !== this.animChoice.state) {
+      this.play(`p-${choice.state}-${choice.row}`);
+    }
+    this.animChoice = choice;
+
     this.armL.setPosition(this.x, this.y);
     this.armR.setPosition(this.x, this.y);
   }
