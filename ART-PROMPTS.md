@@ -27,6 +27,33 @@ behind shoulders. Minimal detail, chunky shapes readable at 64px.
 ```
 *Ghi chú: physics body: circle radius 14 offset (16,18). Hướng lên = mặc định.*
 
+### A1s. Player K-07 sprite sheet (ANIMATION) → `public/art/sprites/player-sheet.png` (384×192)
+```
+Sprite sheet for a top-down 2D game character. EXACTLY 384x192 pixels, a
+strict grid of 6 columns x 3 rows, every cell exactly 64x64 pixels, no
+gaps between cells. The SAME character in all 18 cells: top-down soldier
+K-07 — deep navy armor #101826, cyan #38E8FF glowing visor band across
+the helmet, cyan ring on shoulder pads, small cyan chest core light, slim
+rifle with cyan glowing muzzle tip, backpack behind shoulders. Flat vector
+style, strict 6-color palette only: #070A0F, #101826, #38E8FF, #FF6A1A,
+#FF3D9A, #F4F8FF. Transparent background, no text, no watermark, no drop
+shadow. Only the pose changes between cells:
+
+- ROW 0 (top) = character facing DOWN (visor toward the viewer's bottom).
+- ROW 1 (middle) = character facing RIGHT (profile view, rifle in hand).
+- ROW 2 (bottom) = character facing UP (backpack visible, back view).
+
+Within every row, the 6 columns are:
+- COL 0-1 = idle: standing, subtle breathing bob.
+- COL 2-3 = walk cycle: two-step stride, body bobbing up and down.
+- COL 4-5 = shooting: rifle recoils back, muzzle flash on the rifle tip,
+  body leaning back slightly.
+
+Keep the character fully inside its 64x64 cell with a small margin; never
+touch cell borders. All cells must show the exact same armor design.
+```
+*A1s thay thế A1 khi có sheet; chưa có sheet thì game tự dùng sheet placeholder procedural.*
+
 ### A2. Patrol Drone → `public/art/sprites/enemy-drone.png` (40×40)
 ```
 Quadcopter combat drone, centered in 40x40 canvas, facing RIGHT (front = +X).
