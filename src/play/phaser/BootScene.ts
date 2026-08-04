@@ -16,7 +16,6 @@ export class BootScene extends Phaser.Scene {
   create(): void {
     const t0 = performance.now();
     generateAllTextures(this);
-    queueAiSprites(this);
     this.load.once('complete', () => {
       if (import.meta.env.DEV) console.log(`[boot] textures generated in ${Math.round(performance.now() - t0)}ms`);
       // guarantee the player sheet + animations exist (AI art wins when provided)
@@ -26,7 +25,14 @@ export class BootScene extends Phaser.Scene {
       createPlayerAnims(this);
       this.scene.start('world');
     });
-    this.load.start();
+    // queueAiSprites probes sheet-file availability (async) before queueing,
+    // so a missing sheet file is never queued and cannot produce a loader
+    // console error. Start the loader only once the queue is finalised, and
+    // only if the scene is still alive (React StrictMode dev destroys the
+    // first game while the probe is pending).
+    void queueAiSprites(this).then(() => {
+      if (this.load.state !== Phaser.Loader.LOADER_DESTROYED) this.load.start();
+    });
   }
 }
 

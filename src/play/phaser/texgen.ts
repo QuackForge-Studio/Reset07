@@ -154,10 +154,11 @@ export function generatePlayerSheetFallback(scene: Phaser.Scene): boolean {
   }
   g.generateTexture('player-sheet', 384, 192);
   g.destroy();
-  // re-register as a sprite sheet so frames are 64×64 cells
-  const src = scene.textures.get('player-sheet').getSourceImage() as HTMLCanvasElement;
-  scene.textures.remove('player-sheet');
-  scene.textures.addCanvas('player-sheet', src);
+  // Re-register as a sprite sheet so frames are 64×64 cells. Phaser 3.60+
+  // `addSpriteSheet` accepts a Texture source and only runs the frame parser,
+  // reusing the texture as-is. Do NOT remove + addCanvas: `textures.remove`
+  // destroys the texture, which returns the pooled canvas to CanvasPool
+  // (reset to 1×1), so the re-registered sheet would parse zero frames.
   scene.textures.addSpriteSheet('player-sheet', scene.textures.get('player-sheet'), { frameWidth: 64, frameHeight: 64 });
   if (import.meta.env.DEV) console.log('[boot] procedural player sheet fallback generated');
   return true;

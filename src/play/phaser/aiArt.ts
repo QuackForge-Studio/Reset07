@@ -52,17 +52,61 @@ export const AI_SHEETS: ReadonlyArray<AiSheetSpec> = [
  * a handler that swaps each successfully loaded image into the texture manager
  * under its real key (replacing the procedural texture). Call once, then
  * `scene.load.start()` and wait for `complete` before starting the world.
+ *
+ * Async: sheet files are probed (Image element) before queueing so a missing
+ * sheet file is never queued — a queued-but-missing file makes the loader log
+ * `Failed to process file` (console error) at every boot. Image load failures
+ * (404, SPA-fallback HTML, decode errors) are silent in the console, and the
+ * probe is skipped while offline (where no AI asset can load anyway).
+ * Sprite files are queued unconditionally (they exist in public/art/sprites/).
  */
-export function queueAiSprites(scene: Phaser.Scene): void {
+export async function queueAiSprites(scene: Phaser.Scene): Promise<void> {
   // Register a single filecomplete handler (not per-file) so every queued
   // file is processed; then queue all files.
   const specs: Array<{ tmp: string; sprite?: AiSpriteSpec; sheet?: AiSheetSpec }> = [
     ...AI_SPRITES.map((s) => ({ tmp: `aix_${s.key}`, sprite: s })),
     ...AI_SHEETS.map((s) => ({ tmp: `aix_${s.key}`, sheet: s })),
   ];
+  const sheetOk = new Map<string, boolean>();
+  await Promise.all(
+    AI_SHEETS.map(
+      (sheet) =>
+        new Promise<void>((resolve) => {
+          // Offline there are no AI assets (the missing sheet file never
+          // produced a cacheable response), so skip probing entirely: a failed
+          // network request logs `Failed to load resource` to the console no
+          // matter how it is issued.
+          if (!navigator.onLine) {
+            sheetOk.set(sheet.key, false);
+            resolve();
+            return;
+          }
+          // Probe with an Image element: load failures (404, SPA-fallback
+          // HTML, decode errors) are silent in the console — unlike fetch/XHR
+          // resource errors — and onload validates the file is a decodable
+          // image of exactly the expected grid size.
+          const img = new Image();
+          img.onload = () => {
+            sheetOk.set(sheet.key, img.width === sheet.cols * sheet.frameWidth && img.height === sheet.rows * sheet.frameHeight);
+            resolve();
+          };
+          img.onerror = () => {
+            sheetOk.set(sheet.key, false);
+            resolve();
+          };
+          img.src = `art/sprites/${sheet.file}`;
+        }),
+    ),
+  );
+  // The probe resolves asynchronously; the scene may have been torn down in
+  // the meantime (React StrictMode dev double-mounts the game shell, so the
+  // first game is destroyed while this promise is pending). A destroyed
+  // LoaderPlugin must not be touched — bail out.
+  if (scene.load.state === Phaser.Loader.LOADER_DESTROYED) return;
   for (const { tmp, sprite, sheet } of specs) {
     const file = sprite ? sprite.file : sheet?.file;
     if (!file) continue;
+    if (sheet && !sheetOk.get(sheet.key)) continue;
     scene.load.image(tmp, `art/sprites/${file}`);
   }
   scene.load.on('filecomplete', (key: string) => {
@@ -99,7 +143,7 @@ export function queueAiSprites(scene: Phaser.Scene): void {
         return;
       }
       scene.textures.remove(key);
-      scene.textures.remove(sheet.key);
+      if (scene.textures.exists(sheet.key)) scene.textures.remove(sheet.key);
       scene.textures.addSpriteSheet(sheet.key, img, { frameWidth: sheet.frameWidth, frameHeight: sheet.frameHeight });
       if (import.meta.env.DEV) console.log(`[ai-art] applied ${sheet.key} (${img.width}x${img.height}, ${sheet.cols}x${sheet.rows})`);
       return;
