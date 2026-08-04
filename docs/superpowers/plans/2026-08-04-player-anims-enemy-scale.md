@@ -598,7 +598,6 @@ Insert after the A1 block (before `### A2.`):
 
 ```markdown
 ### A1s. Player K-07 sprite sheet (ANIMATION) → `public/art/sprites/player-sheet.png` (384×192)
-```
 Sprite sheet for a top-down 2D game character. EXACTLY 384x192 pixels, a
 strict grid of 6 columns x 3 rows, every cell exactly 64x64 pixels, no
 gaps between cells. The SAME character in all 18 cells: top-down soldier
