@@ -62,7 +62,7 @@ export class Player extends DamageableSprite {
   private glow: Phaser.GameObjects.Image;
   private dashTrail: Phaser.GameObjects.Image[] = [];
   private lowHpWarned = false;
-  private animChoice: PlayerAnimChoice = { state: 'idle', row: 'up', flipX: false };
+  private animChoice: PlayerAnimChoice | null = null;
 
   constructor(scene: Phaser.Scene, x: number, y: number, fx: EffectManager, modules: ModuleId[], ev: PlayerEvents = {}) {
     const tex = scene.textures.exists('player-sheet') ? 'player-sheet' : 'player';
@@ -299,10 +299,10 @@ export class Player extends DamageableSprite {
       aimAngle: this.aimAngle,
       moveX: mx,
       moveY: my,
-      last: this.animChoice,
+      last: this.animChoice ?? { state: 'idle', row: 'up', flipX: false },
     });
     this.setFlipX(choice.flipX);
-    if (choice.row !== this.animChoice.row || choice.state !== this.animChoice.state) {
+    if (!this.animChoice || choice.row !== this.animChoice.row || choice.state !== this.animChoice.state) {
       this.play(`p-${choice.state}-${choice.row}`);
     }
     this.animChoice = choice;
