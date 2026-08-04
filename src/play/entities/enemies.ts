@@ -12,6 +12,7 @@ import type { WorldScene } from '../types';
 import { ENEMY_STATS, type EnemyKind } from '../data/enemies';
 import { calcDamage } from '../systems/combat';
 import type { ExplosionKind } from '../systems/Explosions';
+import { enemyBodyParams } from '../systems/animLogic';
 
 export interface EnemyHooks {
   onDeath?: (e: EnemyBase, byExplosion: boolean) => void;
@@ -35,6 +36,8 @@ export abstract class EnemyBase extends DamageableSprite {
   protected flashTimer = 0;
   protected facing = 0;
   protected separation = 40;
+  /** Base visual/hitbox scale for this enemy kind (drone/hunter 1.5, shield 1.4, detonator 1.6). */
+  protected baseScale = 1;
 
   constructor(scene: Phaser.Scene, x: number, y: number, kind: EnemyKind, texture: string, hooks: EnemyHooks) {
     const stats = ENEMY_STATS[kind];
@@ -44,7 +47,13 @@ export abstract class EnemyBase extends DamageableSprite {
     this.touchDamage = stats.touchDamage;
     this.enemyHooks = hooks;
     this.sceneW = scene as WorldScene;
-    this.setCircle(stats.radius, 20 - stats.radius, 20 - stats.radius);
+    const bp = enemyBodyParams(kind, this.frame.width);
+    this.baseScale = bp.scale;
+    this.setScale(bp.scale);
+    // Phaser Arcade bodies auto-scale with the sprite (world extents = source × scaleX),
+    // so divide the world-intent bp.radius/offset back to source-pixel space to keep the
+    // circle proportional (halfWidth = stats.radius * scale) and centered on the scaled frame.
+    this.setCircle(bp.radius / bp.scale, bp.offsetX / bp.scale, bp.offsetY / bp.scale);
     this.setDepth(60);
   }
 
@@ -506,7 +515,7 @@ export class Detonator extends EnemyBase {
       if (this.beepTimer <= 0) {
         this.beepTimer = interval;
         this.sceneW.sfx('beep');
-        this.setScale(1 + (1 - this.fuse / 2.4) * 0.3);
+        this.setScale(this.baseScale * (1 + (1 - this.fuse / 2.4) * 0.3));
       }
       this.warningRing.setPosition(this.x, this.y);
       this.warningRing.setVisible(true);
@@ -523,7 +532,7 @@ export class Detonator extends EnemyBase {
       if (this.fuse <= 0) this.detonateNow();
     } else {
       this.warningRing.setVisible(false);
-      this.setScale(1);
+      this.setScale(this.baseScale);
       const move = this.steerTo(p.x, p.y, dt);
       this.applyMove(move.x, move.y, dt);
     }
