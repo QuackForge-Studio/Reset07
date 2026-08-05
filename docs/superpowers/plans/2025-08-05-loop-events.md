@@ -579,7 +579,7 @@ In `src/play/ui/ui.css`:
 
 ```css
 .hud__side-chips { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
-.hud__side-chip { padding: 2px 8px; border: 1px solid var(--color-border, rgba(56,232,255,0.35)); border-radius: 3px; color: #9adbe8; background: rgba(7,10,15,0.5); }
+.hud__side-chip { padding: 2px 8px; border: 1px solid rgba(56, 232, 255, 0.35); border-radius: 3px; color: var(--color-emergency-cyan); background: rgba(7, 10, 15, 0.5); }
 ```
 
 - [ ] **Step 3: Typecheck + build**
