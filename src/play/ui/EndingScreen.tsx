@@ -5,6 +5,7 @@
 import { useMemo, useState } from 'react';
 import type { SaveData } from '../systems/SaveSystem';
 import { api } from '../bridge';
+import { artAssetPath } from '../../brand/assets';
 
 // ── Decision modal ──────────────────────────────────────────
 
@@ -24,6 +25,7 @@ export function EndingDecisionModal({ available, save }: { available: { preserve
 
   return (
     <div className="modal-backdrop">
+      <div className="modal-backdrop__art" aria-hidden style={{ backgroundImage: `url(${artAssetPath('bossConcept')})` }} />
       <div className="modal panel decision">
         <span className="type-data-xs text-muted">CORE GUARDIAN DOWN — FINAL DECISION</span>
         <h2 className="type-display">THE SHELL IS DYING</h2>
@@ -99,18 +101,23 @@ const EPILOGUES: Record<'preserve' | 'break' | 'release', { title: string; sub: 
 
 export function EndingScreen({ id, save, onContinue, onTitle }: { id: 'preserve' | 'break' | 'release'; save: SaveData; onContinue: () => void; onTitle: () => void }) {
   const e = EPILOGUES[id];
+  const art = id === 'break' ? artAssetPath('bossConcept') : artAssetPath('k07Portrait');
+  const alt = id === 'break' ? 'The core guardian — decommissioned' : 'K-07 — continuity keeper';
   return (
     <div className="modal-backdrop">
       <div className={`modal panel ending ending--${e.accent}`}>
         <span className="type-data-xs text-muted">MEMORY ARCHIVE — FINAL ENTRY</span>
         <h2 className="type-display ending__title">{e.title}</h2>
         <div className="ending__sub type-display-s">{e.sub}</div>
-        <div className="ending__body">
-          {e.body.map((p, i) => (
-            <p key={i} className="type-ui-s text-secondary">
-              {p}
-            </p>
-          ))}
+        <div className="ending__grid">
+          <img className="ending__art" src={art} alt={alt} />
+          <div className="ending__body">
+            {e.body.map((p, i) => (
+              <p key={i} className="type-ui-s text-secondary">
+                {p}
+              </p>
+            ))}
+          </div>
         </div>
         <div className="ending__stats type-data-xs text-muted">
           LOOPS SURVIVED: {save.story.loops} · MEMORIES: {save.memories.length} · ENDINGS FOUND: {save.story.endingCount}/3
