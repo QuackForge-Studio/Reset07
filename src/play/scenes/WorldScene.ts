@@ -20,7 +20,7 @@ import { districtAt, GATES, TILE, type GateDef } from '../world/cityData';
 import { Player, boltDamage } from '../entities/Player';
 import { createEnemy, ShieldUnit, type EnemyBase } from '../entities/enemies';
 import { CoreGuardian } from '../entities/boss';
-import { RescueCapsule, MemoryCrystal, Relay, EvacCapsule, Explosive, type Interactable } from '../entities/environment';
+import { RescueCapsule, MemoryCrystal, Relay, EvacCapsule, Explosive, SupplyCrate, type Interactable } from '../entities/environment';
 import { DamageableSprite } from '../entities/base';
 import { buildLoopPlan, ObjectiveTracker } from '../data/objectives';
 import { MEMORY_FLAGS, dialogueById, type DialogueLineDef } from '../data/dialogue';
@@ -29,6 +29,7 @@ import { MEMORIES, memoryById } from '../data/memories';
 import { MODULE_SOURCES } from '../data/modules';
 import { evaluateEndings, type EndingId } from '../data/endings';
 import { DISTRICT_CAPS, SPAWN_WEIGHTS, enemyUnlocked, type EnemyKind } from '../data/enemies';
+import { pickLoopEvents, EVENT_SLOTS, SUPPLY_REWARD, AMBUSH_REWARD, type DistrictId, type LoopEventKind } from '../data/events';
 import { saveSystem, type SaveData } from '../systems/SaveSystem';
 import { t } from '../data/strings';
 import { EXPLOSION_PRESETS } from '../data/fx';
@@ -55,6 +56,8 @@ export class WorldScene extends Phaser.Scene implements WorldSceneI {
   lamps: Array<{ pole: import('../entities/environment').DecorativeProp; light: Phaser.GameObjects.Image }> = [];
   coreShell: Phaser.GameObjects.Image | null = null;
   enemyList: EnemyBase[] = [];
+  loopEvents: Array<{ district: DistrictId; kind: LoopEventKind; tile: [number, number]; completed?: boolean }> = [];
+  ambushActive = false;
   enemyBolts!: Phaser.Physics.Arcade.Group;
   playerBolts!: Phaser.Physics.Arcade.Group;
   explosiveProps: Explosive[] = [];
@@ -105,6 +108,8 @@ export class WorldScene extends Phaser.Scene implements WorldSceneI {
     this.puddleList.length = 0;
     this.explosiveProps.length = 0;
     this.enemyList.length = 0;
+    this.loopEvents.length = 0;
+    this.ambushActive = false;
     this.interactables.length = 0;
     this.gates = [];
     this.spawnData = [];
@@ -252,6 +257,7 @@ export class WorldScene extends Phaser.Scene implements WorldSceneI {
       hiddenObjectiveDone: this.save.flags.includes('evacDone'),
     });
     this.objectives = new ObjectiveTracker(plan);
+    this.spawnLoopEvents();
     this.loopTimer = new LoopTimer(undefined, {
       onPhase: (phase) => this.onLoopPhase(phase),
       onSecond: (sec) => {
@@ -1235,6 +1241,7 @@ export class WorldScene extends Phaser.Scene implements WorldSceneI {
           }
           if (enemy === this.openingDrone) this.openingDroneDead = true;
           if (enemy === this.openingDrone2) this.openingDrone2Dead = true;
+          this.checkAmbushComplete();
         },
         onPlayerHit: (dmg) => {
           if (e.alive) this.damagePlayer(dmg, e.x, e.y);
@@ -1247,6 +1254,76 @@ export class WorldScene extends Phaser.Scene implements WorldSceneI {
     this.enemyGroup.add(e);
     this.explosions.register(e);
     return e;
+  }
+
+  private spawnLoopEvents(): void {
+    if (this.save.story.loops === 0) return;
+    const reachable: DistrictId[] = ['service', 'power', 'transit', 'yard'];
+    const picked = pickLoopEvents(this.save.story.loops, reachable);
+    this.loopEvents = picked.map((e) => ({
+      ...e,
+      tile: EVENT_SLOTS[e.district][e.kind === 'supply' ? 0 : 1],
+      completed: false,
+    }));
+    for (const ev of this.loopEvents) {
+      const [tx, ty] = ev.tile;
+      const wx = tx * TILE + TILE / 2;
+      const wy = ty * TILE + TILE / 2;
+      if (ev.kind === 'supply') {
+        const crate = new SupplyCrate(this, wx, wy, {
+          onOpened: () => {
+            this.player.resetHeat();
+            this.player.addOverdriveCharge(SUPPLY_REWARD.overdrive * 100);
+            this.sfx('interact');
+            this.fx.spawnGlow(wx, wy, PAL.cyan, 3, 0.6);
+            bus.emit('toast', { text: t('event.supply'), tone: 'good' });
+            ev.completed = true;
+          },
+        });
+        this.interactables.push(crate);
+      } else {
+        this.ambushTriggerLine(wx, wy);
+      }
+    }
+  }
+
+  private ambushTriggerLine(x: number, y: number): void {
+    const zone = this.add.zone(x, y, TILE * 4, TILE * 2).setOrigin(0.5, 0.5);
+    this.physics.add.existing(zone, true);
+    this.physics.add.overlap(this.player, zone, () => {
+      if (this.ambushActive || this.loopState !== 'playing') return;
+      this.ambushActive = true;
+      const dx = 120;
+      const tx = Math.round((x + dx) / TILE);
+      const ty = Math.round(y / TILE);
+      const wx = tx * TILE + TILE / 2;
+      const wy = ty * TILE + TILE / 2;
+      this.spawnEnemyAt('drone', wx - 40, wy);
+      this.spawnEnemyAt('drone', wx + 40, wy);
+      this.spawnEnemyAt('detonator', wx, wy + 50);
+      this.sfx('siren');
+    });
+  }
+
+  private checkAmbushComplete(): void {
+    if (!this.ambushActive) return;
+    const alive = this.enemyList.filter((e) => e.alive);
+    if (alive.length === 0) {
+      this.ambushActive = false;
+      const ev = this.loopEvents.find((e) => e.kind === 'ambush' && !e.completed);
+      if (ev) ev.completed = true;
+      this.player.addOverdriveCharge(AMBUSH_REWARD.overdrive * 100);
+      this.sfx('objective');
+      bus.emit('toast', { text: t('event.ambushClear'), tone: 'good' });
+    }
+  }
+
+  private sideObjectiveSnapshot(): string[] {
+    const base = this.objectives.plan.side
+      .filter((o) => this.objectives.isSideActive(o.id))
+      .map((o) => t(o.descKey));
+    const events = this.loopEvents.filter((ev) => !ev.completed).map((ev) => t(ev.kind === 'supply' ? 'event.supply' : 'event.ambush'));
+    return [...base, ...events];
   }
 
   private seedDistricts(): void {
@@ -1576,7 +1653,7 @@ export class WorldScene extends Phaser.Scene implements WorldSceneI {
       overdrive: this.player.overdrivePct,
       overdriveActive: this.player.overdriveActive,
       objective: obj ? { text: t(obj.descKey), worldX: obj.tile[0] * TILE + TILE / 2, worldY: obj.tile[1] * TILE + TILE / 2 } : null,
-      sideObjectives: this.objectives.plan.side.filter((o) => this.objectives.isSideActive(o.id)).map((o) => t(o.descKey)),
+      sideObjectives: this.sideObjectiveSnapshot(),
       interact: snap.interact,
       dialogue: snap.dialogue,
       memories: s.memories.length,
