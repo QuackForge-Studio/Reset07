@@ -778,6 +778,7 @@ export class WorldScene extends Phaser.Scene implements WorldSceneI {
   }
 
   private finishReset(): void {
+    bus.emit('loopReset', undefined);
     // persist + emit summary → React shows garage
     this.save.stats.kills += this.stats.kills;
     this.save.stats.rescues += this.stats.rescues;

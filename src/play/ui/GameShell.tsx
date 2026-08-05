@@ -4,7 +4,7 @@
  * bridge (typed bus + snapshot store).
  *
  * overlay: 'none' during gameplay; 'title' | 'garage' | 'paused' |
- *          'settings' | 'memory' | 'howto' | 'credits' otherwise.
+ *          'settings' | 'memory' | 'howto' | 'credits' | 'reset' otherwise.
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
@@ -24,10 +24,11 @@ import { GarageScreen } from './GarageScreen';
 import { EndingScreen, EndingDecisionModal } from './EndingScreen';
 import { HowToPlay } from './HowToPlay';
 import { CreditsScreen } from './HowToPlay';
+import { LoopResetOverlay } from './LoopResetOverlay';
 
 export let gameRef: Phaser.Game | null = null;
 
-type Overlay = 'none' | 'title' | 'garage' | 'paused' | 'settings' | 'memory' | 'howto' | 'credits';
+type Overlay = 'none' | 'title' | 'garage' | 'paused' | 'settings' | 'memory' | 'howto' | 'credits' | 'reset';
 
 export function GameShell() {
   const mountRef = useRef<HTMLDivElement>(null);
@@ -37,6 +38,7 @@ export function GameShell() {
   const [memoryReturn, setMemoryReturn] = useState<Extract<Overlay, 'garage' | 'paused'>>('garage');
   const [howToReturn, setHowToReturn] = useState<Extract<Overlay, 'title' | 'paused'>>('title');
   const overlayRef = useRef(overlay);
+  const resetPendingRef = useRef(false);
   const setOv = useCallback((o: Overlay) => {
     overlayRef.current = o;
     setOverlay(o);
@@ -171,9 +173,14 @@ export function GameShell() {
       bus.on('ending-decision', (p) => setEndingDecision(p.available)),
       bus.on('ending', (p) => setEnded(p)),
       bus.on('save', () => setSave(saveSystem.load().data)),
+      bus.on('loopReset', () => {
+        resetPendingRef.current = true;
+        setOv('reset');
+      }),
       bus.on('loopEnd', (p) => {
         setLoopEndData(p);
-        setOv('garage');
+        // if the reset overlay is up, its onDone lands on the garage
+        if (!resetPendingRef.current) setOv('garage');
       }),
     ];
     return () => offs.forEach((f) => f());
@@ -237,6 +244,14 @@ export function GameShell() {
           }}
           onCredits={() => setOv('credits')}
           hasSave={hasSave}
+        />
+      )}
+      {overlay === 'reset' && (
+        <LoopResetOverlay
+          onDone={() => {
+            resetPendingRef.current = false;
+            setOv('garage');
+          }}
         />
       )}
       {overlay === 'garage' && loopEndData && (

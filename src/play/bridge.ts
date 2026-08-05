@@ -63,6 +63,7 @@ type BusEventMap = {
   interact: { label: string; kind: 'press' | 'hold'; progress?: number } | null;
   toast: ToastPayload;
   loopEnd: LoopEndPayload;
+  loopReset: undefined;
   screen: ScreenId;
   inputMode: 'kb' | 'touch';
   ending: { id: 'preserve' | 'break' | 'release' };
