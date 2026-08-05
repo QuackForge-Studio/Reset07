@@ -36,10 +36,9 @@ export function seededRng(seed: number): () => number {
   };
 }
 
-export function pickLoopEvents(seed: number, reachable: DistrictId[], opts?: { last?: LoopEvent }): LoopEvent[] {
+export function pickLoopEvents(seed: number, reachable: DistrictId[], last?: LoopEvent): LoopEvent[] {
   const pool = LOOP_EVENT_DISTRICTS.filter((d) => reachable.includes(d));
   if (pool.length === 0) return [];
-  const last = opts?.last;
   const cands = last ? pool.filter((d) => d !== last.district) : pool;
   if (cands.length === 0) return [];
 

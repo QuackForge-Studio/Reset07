@@ -49,7 +49,7 @@ describe('pickLoopEvents', () => {
   it('avoids repeating the last district immediately', () => {
     const last = { district: 'power', kind: 'ambush' as const };
     for (let seed = 0; seed < 50; seed++) {
-      const ev = pickLoopEvents(seed, ['service', 'power'], { last });
+      const ev = pickLoopEvents(seed, ['service', 'power'], last);
       expect(ev.find((e) => e.district === 'power')).toBeUndefined();
     }
   });
