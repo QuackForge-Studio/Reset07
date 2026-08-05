@@ -2,6 +2,12 @@
 
 Dán nguyên đoạn prompt tiếng Anh vào Antigravity. Lưu file theo đúng tên + thư mục ở đầu mỗi mục. Sau khi tạo xong tất cả, báo Pi để tích hợp.
 
+## Pipeline
+
+- PNG output từ Antigravity lưu vào `artwork/` (đúng tên + thư mục con tương ứng).
+- Pi chạy `npm run optimize:art` → WebP nén (~80% nhỏ hơn) vào `public/art/` (bản ship).
+- Sprites giữ PNG trong `public/art/sprites/` (texture game, kích thước load-bearing).
+
 ## 0. Style base (thêm vào đầu mọi prompt sprite)
 
 ```
