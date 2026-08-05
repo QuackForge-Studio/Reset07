@@ -8,3 +8,6 @@ Thumbs.db
 public/icons/
 .pi-subagents
 qa-shots/
+
+# SDD scratch (subagent-driven-development workspaces)
+.superpowers/
