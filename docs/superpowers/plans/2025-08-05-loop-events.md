@@ -349,7 +349,7 @@ git commit -m "feat(events): EN/VI strings for supply + ambush events"
 
 **Interfaces:**
 - Consumes: `pickLoopEvents`, `EVENT_SLOTS`, `SUPPLY_REWARD`, `AMBUSH_REWARD` (from `../data/events`); `SupplyCrate` (from `../entities/environment`); existing `spawnEnemyAt`, `interactables`, `playerPos`, `pathfinder`, `sfx`, `fx`.
-- Produces: class fields `loopEvents: Array<{ district: DistrictId; kind: LoopEventKind; tile: [number, number] }>` and `ambushActive: boolean`; private methods `spawnLoopEvents()`, `ambushTriggerLine(x: number, y: number)`, `maybeTriggerAmbush()`, `completeAmbush()`, `sideObjectiveSnapshot()`; wires rewards.
+- Produces: class fields `loopEvents: Array<{ district: DistrictId; kind: LoopEventKind; tile: [number, number]; completed?: boolean }>` and `ambushActive: boolean`; private methods `spawnLoopEvents()`, `ambushTriggerLine(x: number, y: number)`, `checkAmbushComplete()`, `sideObjectiveSnapshot()`; wires rewards.
 
 - [ ] **Step 1: Add imports + class fields**
 
@@ -368,7 +368,7 @@ import { pickLoopEvents, EVENT_SLOTS, SUPPLY_REWARD, AMBUSH_REWARD, type Distric
 Add class fields (near `enemyList` etc.):
 
 ```ts
-  loopEvents: Array<{ district: DistrictId; kind: LoopEventKind; tile: [number, number] }> = [];
+  loopEvents: Array<{ district: DistrictId; kind: LoopEventKind; tile: [number, number]; completed?: boolean }> = [];
   ambushActive = false;
 ```
 
@@ -403,7 +403,7 @@ Add these private methods (near `seedDistricts`):
     if (this.save.story.loops === 0) return; // opening script owns loop 1
     const reachable: DistrictId[] = ['service', 'power', 'transit', 'yard'];
     const picked = pickLoopEvents(this.save.story.loops, reachable);
-    this.loopEvents = picked.map((e) => ({ ...e, tile: EVENT_SLOTS[e.district][e.kind === 'supply' ? 0 : 1] }));
+    this.loopEvents = picked.map((e) => ({ ...e, tile: EVENT_SLOTS[e.district][e.kind === 'supply' ? 0 : 1], completed: false }));
     for (const ev of this.loopEvents) {
       const [tx, ty] = ev.tile;
       const wx = tx * TILE + TILE / 2;
@@ -411,11 +411,11 @@ Add these private methods (near `seedDistricts`):
       if (ev.kind === 'supply') {
         const crate = new SupplyCrate(this, wx, wy, {
           onOpened: () => {
-            this.player.resetHeat?.();
+            this.player.resetHeat();
             this.player.addOverdriveCharge(SUPPLY_REWARD.overdrive * 100);
             this.sfx('pickup');
             this.fx.spawnGlow(wx, wy, PAL.cyan, 3, 0.6);
-            bus.emit('toast', { text: 'SUPPLY RECOVERED', tone: 'good' });
+            bus.emit('toast', { text: t('event.supply'), tone: 'good' });
             ev.completed = true;
           },
         });
@@ -430,11 +430,10 @@ Add these private methods (near `seedDistricts`):
 - [ ] **Step 5: Ambush trigger + reward**
 
 ```ts
-  /** A trigger line in front of the ambush tile; crossing spawns the wave. */
+  /** A trigger zone over the ambush tile; crossing spawns the wave. */
   private ambushTriggerLine(x: number, y: number): void {
     const zone = this.add.zone(x, y, TILE * 4, TILE * 2).setOrigin(0.5, 0.5);
     this.physics.add.existing(zone, true);
-    const body = zone.body as Phaser.Physics.Arcade.StaticBody;
     this.physics.add.overlap(this.player, zone, () => {
       if (this.ambushActive || this.loopState !== 'playing') return;
       this.ambushActive = true;
@@ -465,6 +464,8 @@ And add:
     const alive = this.enemyList.filter((e) => e.alive);
     if (alive.length === 0) {
       this.ambushActive = false;
+      const ev = this.loopEvents.find((e) => e.kind === 'ambush' && !e.completed);
+      if (ev) ev.completed = true;
       this.player.addOverdriveCharge(AMBUSH_REWARD.overdrive * 100);
       this.sfx('pickup');
       bus.emit('toast', { text: t('event.ambushClear'), tone: 'good' });
@@ -494,7 +495,7 @@ and add:
   private sideObjectiveSnapshot(): string[] {
     const base = this.objectives.plan.side.filter((o) => this.objectives.isSideActive(o.id)).map((o) => t(o.descKey));
     const events = this.loopEvents
-      .filter((ev) => ev.kind === 'supply' || (ev.kind === 'ambush' && !this.ambushActive))
+      .filter((ev) => !ev.completed)
       .map((ev) => t(ev.kind === 'supply' ? 'event.supply' : 'event.ambush'));
     return [...base, ...events];
   }
