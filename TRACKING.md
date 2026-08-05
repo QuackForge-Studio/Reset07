@@ -4,6 +4,7 @@ Durable task log. Updated whenever a chunk of work lands. One line per item, new
 
 ## In progress
 
+- [x] Art integration landed: 5 WebP backdrops (title/loading+reset/garage/memory/endings), PNG sources in `artwork/`, `npm run optimize:art`; smoke-flash fix note already logged.
 - [x] Smoke flash bug FIXED: damaged/critical explosive props smoke rendered as a bright accumulating haze (EffectManager smoke pool used BlendModes.ADD with dark tint — additive stacks into a white-out flash). Pool now NORMAL blend; verified via Playwright pixel-diff probe (bright pixels 28.5k → ~950, lum +153% → +18%). Typecheck + 60 unit tests green.
 - [x] Combat readability pass (game-design review applied): explosive props now draw a pulsing AOE danger circle (exact blast radius, `Telegraph.showCircle` enhanced with reduced-motion-aware charge pulse + thicker stroke) during their fuse; player gets a world-space floating hull bar above K-07 (cyan, orange when ≤30 HP, hidden at full HP); dialogue panel moves to the top bar during boss fights so it never covers the action. Dash+i-frames, boss laser telegraph, hitstop/shake/damage-flash, localized explosion flash verified as already present — no rework.
 - [x] Player animation: 4-dir sprite sheet (procedural fallback + AI sheet swap) idle/walk/shoot state machine; enemies scaled 1.4-1.6x with proportional centered hitboxes. A1s prompt in ART-PROMPTS.md ready for user generation.

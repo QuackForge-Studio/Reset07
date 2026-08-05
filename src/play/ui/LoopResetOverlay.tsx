@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { artAssetPath } from '../../brand/assets';
 
 interface Props {
@@ -12,10 +12,12 @@ interface Props {
  * disabled under html[data-motion='reduced'].
  */
 export function LoopResetOverlay({ onDone }: Props) {
+  const onDoneRef = useRef(onDone);
+  onDoneRef.current = onDone;
   useEffect(() => {
-    const t = window.setTimeout(onDone, 1400);
+    const t = window.setTimeout(() => onDoneRef.current(), 1400);
     return () => window.clearTimeout(t);
-  }, [onDone]);
+  }, []);
   return (
     <div className="loop-reset" role="status" aria-label="Loop reset">
       <div className="loop-reset__art" aria-hidden style={{ backgroundImage: `url(${artAssetPath('loadingLoop')})` }} />
