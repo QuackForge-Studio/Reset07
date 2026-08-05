@@ -3,6 +3,7 @@
  * (layered gradients + brand patterns) — zero canvas cost while idle.
  */
 
+import { artAssetPath } from '../../brand/assets';
 import { ResetRings } from '../../brand/patterns/ResetRings';
 import { CountdownGrid } from '../../brand/patterns/CountdownGrid';
 
@@ -20,6 +21,7 @@ export function TitleScreen({ canContinue, hasSave, onNew, onContinue, onSetting
   return (
     <div className="title-screen" role="dialog" aria-label="RESET//07 title">
       <div className="title-screen__bg">
+        <div className="title-screen__art" aria-hidden style={{ backgroundImage: `url(${artAssetPath('titleCity')})` }} />
         <div className="title-screen__grad" />
         <div className="title-screen__city" />
         <ResetRings className="title-screen__rings" opacity={0.5} />
