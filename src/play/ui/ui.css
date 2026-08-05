@@ -559,6 +559,13 @@ html[data-motion='reduced'] .panel { animation: none; }
 .dlg--eli { border-left-color: #4de3c0; }
 .dlg--system { border-left-color: var(--color-text-muted); }
 
+/* during boss fights the panel sits under the top bar, clear of the action */
+.dlg--boss {
+  bottom: auto;
+  top: calc(var(--safe-top, 0px) + 74px);
+  width: min(80vw, 480px);
+}
+
 .dlg__wave {
   display: flex;
   align-items: center;

@@ -8,7 +8,8 @@
 
 import Phaser from 'phaser';
 import { PAL } from '../palette';
-import { DamageableSprite } from './base';
+import { DamageableSprite, Telegraph } from './base';
+import { EXPLOSION_PRESETS } from '../data/fx';
 import type { WorldScene } from '../types';
 import type { ExplosionKind } from '../systems/Explosions';
 
@@ -35,6 +36,7 @@ export class Explosive extends DamageableSprite {
   protected detonating = false;
   protected smokeTimer = 0;
   protected idleSmoke = 0;
+  private fuseTelegraph: Telegraph | null = null;
 
   constructor(scene: Phaser.Scene, x: number, y: number, texture: string, cfg: ExplosiveConfig) {
     super(scene, x, y, texture, cfg.hp, {});
@@ -93,6 +95,9 @@ export class Explosive extends DamageableSprite {
     scene.sfx('beep');
     // a destroyed prop must still complete its fuse — run the fuse on a proxy
     if (!this.active || !this.scene) return;
+    // AOE danger circle — shows the exact blast radius during the fuse
+    this.fuseTelegraph = new Telegraph(scene, blastX, blastY);
+    this.fuseTelegraph.showCircle(blastX, blastY, EXPLOSION_PRESETS[this.cfg.boomKind].radius);
     this.setTintFill(PAL.white);
     scene.tweens.add({
       targets: this,
@@ -132,6 +137,10 @@ export class Explosive extends DamageableSprite {
   update(dt: number): void {
     if (!this.alive) return;
     this.applyFlashAndKnock(dt);
+    // keep the fuse danger circle pulsing on the exact blast radius
+    if (this.detonating && this.fuseTelegraph) {
+      this.fuseTelegraph.showCircle(this.x, this.y, EXPLOSION_PRESETS[this.cfg.boomKind].radius);
+    }
     const fx = this.sceneWfx();
     if (!fx) return;
     if (this.state === 'damaged') {
@@ -151,6 +160,12 @@ export class Explosive extends DamageableSprite {
       this.idleSmoke -= dt;
       if (this.idleSmoke <= 0) this.state = 'intact';
     }
+  }
+
+  destroy(fromScene?: boolean): void {
+    this.fuseTelegraph?.destroy();
+    this.fuseTelegraph = null;
+    super.destroy(fromScene);
   }
 }
 

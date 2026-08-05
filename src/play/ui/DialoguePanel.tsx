@@ -9,8 +9,10 @@ import { api } from '../bridge';
 export function DialoguePanel({ snap }: { snap: HudSnapshot }) {
   const d = snap.dialogue;
   if (!d) return null;
+  // during boss fights the panel moves to the top so it never covers the action
+  const top = !!snap.boss;
   return (
-    <div className={`dlg dlg--${d.speaker === 'MARA' ? 'mara' : d.speaker === 'CORE GUARDIAN' ? 'guardian' : d.speaker === 'ELI' ? 'eli' : 'system'}`}>
+    <div className={`dlg ${top ? 'dlg--boss ' : ''}dlg--${d.speaker === 'MARA' ? 'mara' : d.speaker === 'CORE GUARDIAN' ? 'guardian' : d.speaker === 'ELI' ? 'eli' : 'system'}`}>
       <div className="dlg__wave" aria-hidden>
         {[0.9, 0.5, 0.8, 0.35, 0.7, 0.45, 0.6].map((h, i) => (
           <span key={i} style={{ height: `${h * 100}%`, animationDelay: `${i * 90}ms` }} />

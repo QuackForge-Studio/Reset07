@@ -114,12 +114,17 @@ export class Telegraph {
   showCircle(x: number, y: number, radius: number, color = PAL.danger): void {
     if (!this.arc) {
       this.arc = this.sceneOf(this.line).add.circle(x, y, radius, color, 0.18);
-      this.arc.setStrokeStyle(2, color, 0.9);
+      this.arc.setStrokeStyle(3, color, 0.9);
       this.arc.setDepth(119);
     }
     this.arc.setPosition(x, y);
     this.arc.setRadius(radius);
     this.arc.setVisible(true);
+    // charge pulse so an active danger zone reads as live, not a static smear
+    if (!this.line.scene.registry.get('reducedMotion')) {
+      const t = this.line.scene.time.now / 110;
+      this.arc.setAlpha(0.18 * (0.7 + 0.3 * Math.sin(t)));
+    }
   }
 
   private sceneOf(o: Phaser.GameObjects.Image): Phaser.Scene {

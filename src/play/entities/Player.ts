@@ -63,6 +63,8 @@ export class Player extends DamageableSprite {
   private dashTrail: Phaser.GameObjects.Image[] = [];
   private lowHpWarned = false;
   private animChoice: PlayerAnimChoice | null = null;
+  private hpBarBg: Phaser.GameObjects.Rectangle;
+  private hpBarFill: Phaser.GameObjects.Rectangle;
 
   constructor(scene: Phaser.Scene, x: number, y: number, fx: EffectManager, modules: ModuleId[], ev: PlayerEvents = {}) {
     const tex = scene.textures.exists('player-sheet') ? 'player-sheet' : 'player';
@@ -82,6 +84,15 @@ export class Player extends DamageableSprite {
     this.glow.setAlpha(0.55);
     this.glow.setDepth(79);
     this.setScale(1);
+    // floating hull bar — world-space, above K-07's head, hidden at full hp
+    this.hpBarBg = scene.add.rectangle(x, y - 32, 36, 5, PAL.black, 0.55);
+    this.hpBarBg.setStrokeStyle(1, PAL.white, 0.25);
+    this.hpBarBg.setDepth(82);
+    this.hpBarBg.setVisible(false);
+    this.hpBarFill = scene.add.rectangle(x - 17, y - 32, 34, 3, PAL.cyan, 0.95);
+    this.hpBarFill.setOrigin(0, 0.5);
+    this.hpBarFill.setDepth(83);
+    this.hpBarFill.setVisible(false);
   }
 
   get isDashing(): boolean {
@@ -166,8 +177,22 @@ export class Player extends DamageableSprite {
   }
 
   update(dt: number, input: InputState, enemies: ReadonlyArray<{ x: number; y: number; alive: boolean }>): void {
-    if (!this.alive) return;
+    if (!this.alive) {
+      this.hpBarBg.setVisible(false);
+      this.hpBarFill.setVisible(false);
+      return;
+    }
     const now = performance.now();
+
+    // ── floating hull bar ──
+    const showBar = this.hp < this.maxHp;
+    const by = this.y - 32;
+    this.hpBarBg.setPosition(this.x, by);
+    this.hpBarBg.setVisible(showBar);
+    this.hpBarFill.setPosition(this.x - 17, by);
+    this.hpBarFill.setSize(Math.max(0, 34 * (this.hp / this.maxHp)), 3);
+    this.hpBarFill.setFillStyle(this.hp <= 30 ? PAL.orange : PAL.cyan, 0.95);
+    this.hpBarFill.setVisible(showBar);
 
     // ── cooldowns ──
     if (!this.dashReady) {
@@ -366,6 +391,8 @@ export class Player extends DamageableSprite {
 
   destroy(fromScene?: boolean): void {
     this.glow.destroy();
+    this.hpBarBg.destroy();
+    this.hpBarFill.destroy();
     for (const t of this.dashTrail) t.destroy();
     this.dashTrail = [];
     this.armL.destroy();
