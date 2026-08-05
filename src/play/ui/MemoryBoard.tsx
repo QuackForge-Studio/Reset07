@@ -6,6 +6,7 @@
 import { useMemo } from 'react';
 import type { SaveData } from '../systems/SaveSystem';
 import { MEMORIES, MEMORY_LINKS } from '../data/memories';
+import { artAssetPath } from '../../brand/assets';
 
 interface Props {
   save: SaveData;
@@ -45,10 +46,13 @@ export function MemoryBoard({ save, onClose }: Props) {
     <div className="modal-backdrop">
       <div className="modal panel memory-board">
         <div className="memory-board__head">
-          <h2 className="type-display">MEMORY BOARD</h2>
-          <span className="type-data-xs text-muted">
-            {save.memories.length}/{MEMORIES.length} FRAGMENTS — PERSISTENT ACROSS LOOPS
-          </span>
+          <img className="memory-board__avatar" src={artAssetPath('k07Portrait')} alt="" aria-hidden />
+          <div className="memory-board__head-text">
+            <h2 className="type-display">MEMORY BOARD</h2>
+            <span className="type-data-xs text-muted">
+              {save.memories.length}/{MEMORIES.length} FRAGMENTS — PERSISTENT ACROSS LOOPS
+            </span>
+          </div>
         </div>
 
         <div className="memory-board__canvas">

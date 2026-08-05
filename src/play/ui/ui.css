@@ -803,7 +803,16 @@ html[data-motion='reduced'] .panel { animation: none; }
 .settings__back { margin-top: 6px; }
 
 .memory-board { width: min(94vw, 880px); }
-.memory-board__head { display: flex; flex-direction: column; gap: 4px; }
+.memory-board__head { display: flex; flex-direction: row; align-items: center; gap: 14px; }
+.memory-board__head-text { display: flex; flex-direction: column; gap: 4px; }
+.memory-board__avatar {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid var(--color-border-active);
+  box-shadow: var(--glow-cyan);
+}
 .memory-board__canvas {
   position: relative;
   width: 100%;
