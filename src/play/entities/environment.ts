@@ -590,6 +590,7 @@ export class SupplyCrate extends Phaser.GameObjects.Image implements Interactabl
 
   constructor(scene: Phaser.Scene, x: number, y: number, cfg: { onOpened: () => void }) {
     super(scene, x, y, 'crate');
+    scene.add.existing(this);
     this.intId = `supply-${x}-${y}`;
     this.cfg = cfg;
     this.setDepth(45);
