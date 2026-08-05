@@ -11,3 +11,4 @@ qa-shots/
 
 # SDD scratch (subagent-driven-development workspaces)
 .superpowers/
+.worktrees/
