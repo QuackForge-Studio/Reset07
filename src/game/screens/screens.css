@@ -21,6 +21,20 @@
   overflow: hidden;
 }
 
+.loading-screen__art {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+}
+
+.loading-screen__art::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(75% 60% at 50% 50%, rgba(7, 10, 15, 0.66) 0%, rgba(7, 10, 15, 0.25) 60%, transparent 100%);
+}
+
 .loading-screen__trace {
   bottom: -30%;
   height: 55%;

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { artAssetPath } from '../../brand/assets';
 import { LoadingBrandMark } from '../../brand/components/LoadingBrandMark';
 import { MemoryTrace } from '../../brand/patterns/MemoryTrace';
 import { TimingLine } from '../hud/TimingLine';
@@ -25,6 +26,7 @@ export function LoadingScreen({ progress, status = 'INITIALIZING LOOP', showProg
 
   return (
     <div className={['loading-screen', className].filter(Boolean).join(' ')}>
+      <div className="loading-screen__art" aria-hidden style={{ backgroundImage: `url(${artAssetPath('loadingLoop')})` }} />
       <MemoryTrace opacity={0.3} className="loading-screen__trace" />
 
       <header className="loading-screen__bar">
