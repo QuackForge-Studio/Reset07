@@ -1282,16 +1282,16 @@ export class WorldScene extends Phaser.Scene implements WorldSceneI {
         });
         this.interactables.push(crate);
       } else {
-        this.ambushTriggerLine(wx, wy);
+        this.ambushTriggerLine(wx, wy, ev);
       }
     }
   }
 
-  private ambushTriggerLine(x: number, y: number): void {
+  private ambushTriggerLine(x: number, y: number, ev: { completed?: boolean }): void {
     const zone = this.add.zone(x, y, TILE * 4, TILE * 2).setOrigin(0.5, 0.5);
     this.physics.add.existing(zone, true);
     this.physics.add.overlap(this.player, zone, () => {
-      if (this.ambushActive || this.loopState !== 'playing') return;
+      if (this.ambushActive || this.loopState !== 'playing' || ev.completed) return;
       this.ambushActive = true;
       const dx = 120;
       const tx = Math.round((x + dx) / TILE);
