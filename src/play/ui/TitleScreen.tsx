@@ -1,6 +1,6 @@
 /**
- * RESET//07 — title screen. The background is a pure-CSS animated city reset
- * (layered gradients + brand patterns) — zero canvas cost while idle.
+ * RESET//07 — title screen. The background layers a city art backdrop
+ * with CSS gradients and brand patterns for a living city-reset atmosphere.
  */
 
 import { artAssetPath } from '../../brand/assets';

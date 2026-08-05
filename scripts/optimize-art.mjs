@@ -24,9 +24,18 @@ async function walk(dir) {
   return out;
 }
 
-const files = await walk(SRC);
+let files;
+try {
+  files = await walk(SRC);
+} catch (error) {
+  if (error.code === 'ENOENT') {
+    console.error('No PNG sources found under artwork/ — run the generation pipeline first');
+    process.exit(1);
+  }
+  throw error;
+}
 if (files.length === 0) {
-  console.error('No PNG sources found under artwork/');
+  console.error('No PNG sources found under artwork/ — run the generation pipeline first');
   process.exit(1);
 }
 for (const f of files) {

@@ -13,7 +13,9 @@ interface Props {
  */
 export function LoopResetOverlay({ onDone }: Props) {
   const onDoneRef = useRef(onDone);
-  onDoneRef.current = onDone;
+  useEffect(() => {
+    onDoneRef.current = onDone;
+  });
   useEffect(() => {
     const t = window.setTimeout(() => onDoneRef.current(), 1400);
     return () => window.clearTimeout(t);
