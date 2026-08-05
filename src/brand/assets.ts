@@ -18,3 +18,15 @@ export const BRAND_ASSET_PATHS = {
 export type BrandAssetName = keyof typeof BRAND_ASSET_PATHS;
 
 export const brandAssetPath = (name: BrandAssetName): string => BRAND_ASSET_PATHS[name];
+
+export const ART_ASSET_PATHS = {
+  titleCity: `${BASE}art/concept/title-city.webp`,
+  loadingLoop: `${BASE}art/concept/loading-loop.webp`,
+  k07Portrait: `${BASE}art/concept/k07-portrait.webp`,
+  bossConcept: `${BASE}art/concept/boss-concept.webp`,
+  garage: `${BASE}art/backgrounds/garage.webp`,
+} as const;
+
+export type ArtAssetName = keyof typeof ART_ASSET_PATHS;
+
+export const artAssetPath = (name: ArtAssetName): string => ART_ASSET_PATHS[name];
