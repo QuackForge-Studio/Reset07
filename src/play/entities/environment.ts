@@ -573,6 +573,49 @@ export class RescueCapsule extends Phaser.GameObjects.Image implements Interacta
   }
 }
 
+/**
+ * Loop-event supply crate — hold to open. Grants the supply reward
+ * (heat reset + overdrive) once, then self-destructs with an FX burst.
+ */
+export class SupplyCrate extends Phaser.GameObjects.Image implements Interactable {
+  readonly intId: string;
+  radius = 56;
+  labelKey = 'event.supply';
+  holdTime = 1.2;
+  kind = 'hold' as const;
+  enabled = true;
+  private opened = false;
+  private cfg: { onOpened: () => void };
+  private pulse = 0;
+
+  constructor(scene: Phaser.Scene, x: number, y: number, cfg: { onOpened: () => void }) {
+    super(scene, x, y, 'crate');
+    this.intId = `supply-${x}-${y}`;
+    this.cfg = cfg;
+    this.setDepth(45);
+    this.setOrigin(0.5, 0.5);
+  }
+
+  update(dt: number): void {
+    if (this.opened) return;
+    this.pulse += dt * 3;
+    const s = 1 + 0.05 * Math.sin(this.pulse * 1.5);
+    this.setScale(s, s);
+    this.alpha = 0.95 + 0.05 * Math.sin(this.pulse * 2.4);
+  }
+
+  onInteract(): void {
+    if (this.opened) return;
+    this.opened = true;
+    this.enabled = false;
+    const scene = this.scene as WorldScene;
+    scene.sfx('interact');
+    scene.fx.spawnGlow(this.x, this.y, PAL.cyan, 2, 0.5);
+    this.cfg.onOpened();
+    this.destroy();
+  }
+}
+
 export class EvacCapsule extends Phaser.GameObjects.Image implements Interactable {
   readonly intId: string;
   radius = 54;
