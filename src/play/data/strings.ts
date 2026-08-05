@@ -137,6 +137,9 @@ const en: Dict = {
   'obj.memory': 'RECOVER MEMORY FRAGMENT',
   'obj.hiddenCapsules': 'FIND THE EVACUATION CAPSULES',
   'obj.escape': 'SURVIVE THE RESET',
+  'event.supply': 'OPEN SUPPLY CRATE',
+  'event.ambush': 'AMBUSH WARNING — STREET',
+  'event.ambushClear': 'AMBUSH CLEARED',
 
   // ── Endings ────────────────────────────────────────────
   'end.preserve.title': 'ENDING 01 — PRESERVE',
@@ -195,6 +198,9 @@ const vi: Dict = {
   'pause.settings': 'CÀI ĐẶT',
   'pause.restart': 'LẶP LẠI VÒNG',
   'pause.title2': 'VỀ MÀN HÌNH CHÍNH',
+  'event.supply': 'MỞ THÙNG TIẾP TẾ',
+  'event.ambush': 'CẢNH BÁO PHỤC KÍCH — ĐƯỜNG PHỐ',
+  'event.ambushClear': 'ĐÃ DỌN PHỤC KÍCH',
   'set.master': 'ÂM LƯỢNG CHÍNH',
   'set.music': 'NHẠC',
   'set.sfx': 'HIỆU ỨNG',
