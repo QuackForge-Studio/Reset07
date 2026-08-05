@@ -54,18 +54,21 @@ export class EffectManager {
     this.scene = scene;
     this.quality = quality;
     const b = BUDGET[quality];
-    const mk = (tex: string, n: number): Particle[] => {
+    const mk = (tex: string, n: number, blend = Phaser.BlendModes.ADD): Particle[] => {
       const arr: Particle[] = [];
       for (let i = 0; i < n; i++) {
         const img = scene.add.image(-999, -999, tex);
         img.setVisible(false);
-        img.setBlendMode(Phaser.BlendModes.ADD);
+        img.setBlendMode(blend);
         arr.push({ s: img, vx: 0, vy: 0, life: 0, maxLife: 1, grav: 0, drag: 0, rotV: 0, shrink: 1, fade: 1 });
       }
       return arr;
     };
     this.sparks = mk('fx-spark', b.sparks);
-    this.smoke = mk('fx-smoke', b.smoke);
+    // smoke must DARKEN the scene, not glow: additive blending with the dark
+    // smoke tint stacks into a bright accumulating haze that reads as a
+    // screen flash. Normal blend keeps it as visible smoke.
+    this.smoke = mk('fx-smoke', b.smoke, Phaser.BlendModes.NORMAL);
     this.embers = mk('fx-ember', b.embers);
     this.debris = mk('fx-dot', b.debris);
     this.glows = mk('fx-glow', b.glows);
