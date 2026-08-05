@@ -7,6 +7,7 @@ import { useState } from 'react';
 import type { LoopEndPayload } from '../bridge';
 import type { SaveData } from '../systems/SaveSystem';
 import { MODULE_LIST, MAX_EQUIPPED, canEquip, equipModule, unequipModule } from '../data/modules';
+import { artAssetPath } from '../../brand/assets';
 
 interface Props {
   summary: LoopEndPayload;
@@ -32,6 +33,7 @@ export function GarageScreen({ summary, save, onStart, onMemory, onTitle, onEqui
 
   return (
     <div className="modal-backdrop">
+      <div className="modal-backdrop__art" aria-hidden style={{ backgroundImage: `url(${artAssetPath('garage')})` }} />
       <div className="modal panel garage">
         <div className="garage__head">
           <span className="type-data-xs text-muted">SERVICE GARAGE 07 — POST-LOOP DIAGNOSTIC</span>
