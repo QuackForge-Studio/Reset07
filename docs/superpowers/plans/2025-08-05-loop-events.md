@@ -596,56 +596,187 @@ git commit -m "feat(events): HUD side-event chips"
 
 ---
 
-## Task 6: E2E verification (dev probe)
+## Task 6: E2E verification (full dev probe)
 
 **Files:**
 - Create: `scripts/probe-events.mjs` (temporary, delete after)
+- Modify: `src/play/scenes/WorldScene.ts` (one-line label fix)
 
 **Interfaces:**
-- Consumes: dev server on port 5199, `window.__r07` hook (DEV/VITE_E2E), Playwright + system Chrome.
+- Consumes: dev server on port 5199, `window.__r07` hook (DEV/VITE_E2E), Playwright + system Chrome, localStorage save key `reset07.save.v1`.
+- Produces: probe script that forces loop seeds, teleports the player to each event, verifies supply interact + rewards and ambush trigger + rewards, then is deleted.
+
+- [ ] **Step 0: interactLabel fix (one line)**
+
+In `interactLabel(i: Interactable)` add a `SupplyCrate` branch (after the `EvacCapsule` line):
+
+```ts
+    if (i instanceof SupplyCrate) return t('event.supply');
+```
+
+(WorldScene already imports `t` and now imports `SupplyCrate`.)
 
 - [ ] **Step 1: Start dev server**
 
-Run: `npm run dev -- --port 5199` (background).
+Run in background (from the worktree): `npm run dev -- --port 5199`
 
-- [ ] **Step 2: Write the probe**
+- [ ] **Step 2: Write the full probe**
 
 ```js
-// scripts/probe-events.mjs — E2E for loop events (temporary)
+// scripts/probe-events.mjs — E2E for loop events (temporary, delete after)
 import { chromium } from 'playwright-core';
+
 const exe = 'C:/Program Files/Google/Chrome/Application/chrome.exe';
 const browser = await chromium.launch({ executablePath: exe, headless: true });
 const page = await browser.newPage({ viewport: { width: 1500, height: 900 } });
 const errors = [];
 page.on('console', (m) => m.type() === 'error' && errors.push(m.text()));
 page.on('pageerror', (e) => errors.push(String(e)));
+
+const results = [];
+const ok = (name, pass, detail = '') => {
+  results.push({ name, pass, detail });
+  console.log(`${pass ? 'PASS' : 'FAIL'} ${name}${detail ? ' — ' + detail : ''}`);
+};
+
+// wait for the debug hook + playing state
+async function ready() {
+  await page.waitForFunction(() => {
+    const r = window.__r07;
+    return r && r.loopState && r.loopState() === 'playing';
+  }, { timeout: 20000 });
+  await page.waitForTimeout(600);
+}
+
+async function setLoops(n) {
+  await page.evaluate((n) => {
+    const k = 'reset07.save.v1';
+    const raw = localStorage.getItem(k);
+    if (!raw) throw new Error('no save in localStorage');
+    const save = JSON.parse(raw);
+    save.story.loops = n; // seed for pickLoopEvents
+    localStorage.setItem(k, JSON.stringify(save));
+  }, n);
+  await page.reload({ waitUntil: 'networkidle' });
+  await ready();
+}
+
+async function readEvents() {
+  return page.evaluate(() => window.__r07.scene.loopEvents);
+}
+
+async function teleport(x, y) {
+  await page.evaluate(([x, y]) => {
+    const p = window.__r07.scene.player;
+    p.setPosition(x, y);
+    if (p.body) p.body.reset(x, y);
+  }, [x, y]);
+  await page.waitForTimeout(250);
+}
+
+// ── verify supply event: hold-interact the crate, reward applied ──
+async function verifySupply(ev) {
+  const [tx, ty] = ev.tile;
+  const wx = tx * 32 + 16, wy = ty * 32 + 16;
+  await teleport(wx + 48, wy);
+  const before = await page.evaluate(() => {
+    const p = window.__r07.scene.player;
+    p.heat = 80; // force heat (private at compile time, writable at runtime)
+    return { heat: p.heat, od: p.overdrivePct };
+  });
+  // hold E ~1.5s to open the crate (holdTime 1.2)
+  await page.click('canvas', { position: { x: 750, y: 450 } });
+  await page.keyboard.down('e');
+  await page.waitForTimeout(1500);
+  await page.keyboard.up('e');
+  const after = await page.evaluate(() => {
+    const p = window.__r07.scene.player;
+    const sc = window.__r07.scene;
+    return { heat: p.heat, od: p.overdrivePct, crateGone: !sc.interactables.some((i) => i.intId && i.intId.startsWith('supply')) };
+  });
+  ok('supply heat reset', after.heat === 0, `heat ${before.heat} → ${after.heat}`);
+  ok('supply overdrive +0.4', Math.abs(after.od - (before.od + 0.4)) < 0.001, `od ${before.od.toFixed(2)} → ${after.od.toFixed(2)}`);
+  ok('supply crate consumed', after.crateGone);
+}
+
+// ── verify ambush: crossing the tile spawns the wave; clearing rewards ──
+async function verifyAmbush(ev) {
+  const [tx, ty] = ev.tile;
+  const wx = tx * 32 + 16, wy = ty * 32 + 16;
+  await teleport(wx, wy); // overlap triggers the zone
+  await page.waitForTimeout(400);
+  const triggered = await page.evaluate(() => {
+    const sc = window.__r07.scene;
+    return { active: sc.ambushActive, kinds: sc.enemyList.map((e) => e.kind) };
+  });
+  ok('ambush triggered', triggered.active === true);
+  const drones = triggered.kinds.filter((k) => k === 'drone').length;
+  const dets = triggered.kinds.filter((k) => k === 'detonator').length;
+  ok('ambush wave 2 drones + 1 detonator', drones >= 2 && dets >= 1, `drones=${drones} dets=${dets}`);
+  const odBefore = await page.evaluate(() => window.__r07.scene.player.overdrivePct);
+  await page.evaluate(() => {
+    for (const e of window.__r07.scene.enemyList) e.damage(9999);
+  });
+  await page.waitForTimeout(300);
+  const after = await page.evaluate(() => {
+    const sc = window.__r07.scene;
+    return { active: sc.ambushActive, od: sc.player.overdrivePct, cleared: sc.loopEvents.find((x) => x.kind === 'ambush')?.completed === true };
+  });
+  ok('ambush cleared flag', after.active === false && after.cleared);
+  ok('ambush overdrive +0.3', Math.abs(after.od - (odBefore + 0.3)) < 0.001, `od ${odBefore.toFixed(2)} → ${after.od.toFixed(2)}`);
+}
+
+// ── main: sweep seeds until both event kinds are verified ──
 await page.goto('http://localhost:5199/play', { waitUntil: 'networkidle' });
-await page.waitForTimeout(1500);
-// force a loop seed by setting story.loops then reloading
-await page.evaluate(() => {
-  // __r07 not in production; dev exposes it
-});
-// drive: open garage gate, walk to service, verify crate/ambush via scene state
-console.log('errors:', errors);
+await ready();
+let verified = { supply: false, ambush: false };
+for (let seed = 1; seed <= 8 && (!verified.supply || !verified.ambush); seed++) {
+  await setLoops(seed);
+  const events = await readEvents();
+  if (!events || events.length === 0) { ok(`seed ${seed} has events`, false, 'no events'); continue; }
+  ok(`seed ${seed} events 1-2`, events.length >= 1 && events.length <= 2, JSON.stringify(events));
+  for (const ev of events) {
+    if (ev.kind === 'supply' && !verified.supply) { await verifySupply(ev); verified.supply = true; }
+    if (ev.kind === 'ambush' && !verified.ambush) { await verifyAmbush(ev); verified.ambush = true; }
+  }
+}
+ok('both event kinds verified across seeds', verified.supply && verified.ambush);
+ok('zero console/page errors', errors.length === 0, errors.slice(0, 3).join(' | '));
+
+// quick mobile pass (no interaction, just boot + events)
+const mp = await browser.newPage({ viewport: { width: 390, height: 844 } });
+const mErrors = [];
+mp.on('pageerror', (e) => mErrors.push(String(e)));
+await mp.goto('http://localhost:5199/play', { waitUntil: 'networkidle' });
+await mp.waitForTimeout(1200);
+ok('mobile boot clean', mErrors.length === 0, mErrors.slice(0, 3).join(' | '));
+await mp.close();
+
+const failed = results.filter((r) => !r.pass);
+console.log(`\n=== ${results.length - failed.length}/${results.length} PASS ===`);
 await browser.close();
+process.exit(failed.length ? 1 : 0);
 ```
 
 - [ ] **Step 3: Run probe + smoke**
 
-Run: `node scripts/probe-events.mjs`, then `npm run smoke` + `npm run smoke:narrow`.
-Expected: zero console/page errors; supply crate reachable and interactable; ambush spawns 3 enemies on trigger; rewards applied (heat 0, overdrive +).
+Run: `node scripts/probe-events.mjs`
+Expected: all checks PASS (both event kinds verified across seeds 1–8, rewards applied, zero console errors).
 
-- [ ] **Step 4: Delete probe**
+Then: `npm run smoke` + `npm run smoke:narrow` (against the same dev server on 5199).
+Expected: green.
+
+- [ ] **Step 4: Delete probe + commit**
 
 ```bash
 rm scripts/probe-events.mjs
 ```
 
-- [ ] **Step 5: Commit**
+Commit the label fix + probe removal:
 
 ```bash
 git add -A
-git commit -m "chore: loop-event E2E verified (probe deleted)"
+git commit -m "feat(events): supply interact label; E2E probe verified both events (probe deleted)"
 ```
 
 ---
