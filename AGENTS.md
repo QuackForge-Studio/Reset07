@@ -42,6 +42,7 @@ Playwright uses system Chrome at `C:/Program Files/Google/Chrome/Application/chr
 
 - Cloudflare Pages watches **`QuackForge-Studio/quackforge-app`** (main), NOT this repo. Its build (`scripts/build.mjs`) shallow-clones Reset07 and builds it into `dist/reset07/` — so a push here never deploys on its own.
 - To publish game changes: push Reset07, then trigger a `quackforge-app` rebuild — any push/empty commit to its main, or "Retry deployment" in the CF Pages dashboard. Verify the live bundle hash matches a fresh `npm run build` output.
+- **Deploy gotcha**: `/reset07/*` is served by a Pages Function (`functions/reset07/[[path]].ts` in quackforge-app) whose `FILE_PATTERN` regex decides which extensions pass through. It MUST include any new static extension (e.g. `.webp` was missing → backdrops served SPA shell HTML with 200). Check the pattern when adding new asset types.
 - The game's PWA service worker is network-first for navigations; a plain refresh picks up new builds.
 
 ## Structure
