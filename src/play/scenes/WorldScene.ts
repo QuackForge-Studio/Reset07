@@ -1164,6 +1164,7 @@ export class WorldScene extends Phaser.Scene implements WorldSceneI {
       return i.stageCount === 0 ? 'STABILIZE RELAY (1/2)' : 'STABILIZE RELAY (2/2)';
     }
     if (i instanceof EvacCapsule) return 'OPEN EVAC CAPSULE';
+    if (i instanceof SupplyCrate) return t('event.supply');
     return 'INTERACT';
   }
 
