@@ -21,7 +21,7 @@ import { Player, boltDamage } from '../entities/Player';
 import { createEnemy, ShieldUnit, type EnemyBase } from '../entities/enemies';
 import { CoreGuardian } from '../entities/boss';
 import { RescueCapsule, MemoryCrystal, Relay, EvacCapsule, Explosive, SupplyCrate, type Interactable } from '../entities/environment';
-import { DamageableSprite } from '../entities/base';
+import { DamageableSprite, Telegraph } from '../entities/base';
 import { buildLoopPlan, ObjectiveTracker } from '../data/objectives';
 import { MEMORY_FLAGS, dialogueById, type DialogueLineDef } from '../data/dialogue';
 import { TUTORIALS } from '../data/tutorials';
@@ -1294,15 +1294,19 @@ export class WorldScene extends Phaser.Scene implements WorldSceneI {
     this.physics.add.overlap(this.player, zone, () => {
       if (this.ambushActive || this.loopState !== 'playing' || ev.completed) return;
       this.ambushActive = true;
-      const dx = 120;
-      const tx = Math.round((x + dx) / TILE);
-      const ty = Math.round(y / TILE);
-      const wx = tx * TILE + TILE / 2;
-      const wy = ty * TILE + TILE / 2;
-      this.spawnEnemyAt('drone', wx - 40, wy);
-      this.spawnEnemyAt('drone', wx + 40, wy);
-      this.spawnEnemyAt('detonator', wx, wy + 50);
+      const tx = Math.round((x + 120) / TILE), ty = Math.round(y / TILE);
+      const wx = tx * TILE + TILE / 2, wy = ty * TILE + TILE / 2;
+      // spec: telegraph warning ~0.8s, THEN the wave spawns (reduced-motion aware)
+      const tel = new Telegraph(this, wx, wy);
+      tel.showCircle(wx, wy, 96, PAL.danger);
       this.sfx('siren');
+      this.time.delayedCall(800, () => {
+        tel.hide();
+        if (this.loopState !== 'playing') return; // loop ended mid-telegraph
+        this.spawnEnemyAt('drone', wx - 40, wy);
+        this.spawnEnemyAt('drone', wx + 40, wy);
+        this.spawnEnemyAt('detonator', wx, wy + 50);
+      });
     });
   }
 
