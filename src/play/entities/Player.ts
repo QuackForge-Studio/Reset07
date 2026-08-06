@@ -389,6 +389,11 @@ export class Player extends DamageableSprite {
     this.hp = Math.min(this.maxHp, this.hp + amount);
   }
 
+  resetHeat(): void {
+    this.heat = 0;
+    this.overheatUntil = 0;
+  }
+
   destroy(fromScene?: boolean): void {
     this.glow.destroy();
     this.hpBarBg.destroy();

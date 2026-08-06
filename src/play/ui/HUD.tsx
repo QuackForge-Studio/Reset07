@@ -61,6 +61,13 @@ export function HUD({ snap }: { snap: HudSnapshot }) {
           ) : (
             <span className="type-data-xs text-muted">ALL OBJECTIVES CLEAR</span>
           )}
+          {snap.sideObjectives.length > 0 && (
+            <div className="hud__side-chips">
+              {snap.sideObjectives.slice(0, 3).map((s, i) => (
+                <span key={i} className="hud__side-chip type-data-xs">{s}</span>
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="hud__counts">
