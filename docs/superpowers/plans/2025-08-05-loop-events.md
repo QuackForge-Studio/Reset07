@@ -430,20 +430,26 @@ Add these private methods (near `seedDistricts`):
 - [ ] **Step 5: Ambush trigger + reward**
 
 ```ts
-  /** A trigger zone over the ambush tile; crossing spawns the wave (once). */
+  /** A trigger zone over the ambush tile; crossing telegraphs 0.8s, then spawns the wave (once). */
   private ambushTriggerLine(x: number, y: number, ev: { completed?: boolean }): void {
     const zone = this.add.zone(x, y, TILE * 4, TILE * 2).setOrigin(0.5, 0.5);
     this.physics.add.existing(zone, true);
     this.physics.add.overlap(this.player, zone, () => {
       if (this.ambushActive || this.loopState !== 'playing' || ev.completed) return;
       this.ambushActive = true;
-      const dx = 120, dy = 0;
-      const tx = Math.round((x + dx) / TILE), ty = Math.round(y / TILE);
+      const tx = Math.round((x + 120) / TILE), ty = Math.round(y / TILE);
       const wx = tx * TILE + TILE / 2, wy = ty * TILE + TILE / 2;
-      this.spawnEnemyAt('drone', wx - 40, wy);
-      this.spawnEnemyAt('drone', wx + 40, wy);
-      this.spawnEnemyAt('detonator', wx, wy + 50);
-      this.sfx('warning');
+      // spec: telegraph warning ~0.8s, THEN the wave spawns (reduced-motion aware)
+      const tel = new Telegraph(this, wx, wy);
+      tel.showCircle(wx, wy, 96, PAL.danger);
+      this.sfx('siren');
+      this.time.delayedCall(800, () => {
+        tel.hide();
+        if (this.loopState !== 'playing') return; // loop ended mid-telegraph
+        this.spawnEnemyAt('drone', wx - 40, wy);
+        this.spawnEnemyAt('drone', wx + 40, wy);
+        this.spawnEnemyAt('detonator', wx, wy + 50);
+      });
     });
   }
 ```
